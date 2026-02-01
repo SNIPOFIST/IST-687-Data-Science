@@ -16,8 +16,8 @@ This repository showcases a comprehensive data science project that demonstrates
 
 **Course:** IST-687 Data Science  
 **Institution:** Syracuse University  
-**Semester:** [Add semester/year]  
-**Instructor:** [Add instructor name]  
+**Semester:** Fall 2024  
+**Project Completed:** November 2024  
 
 ## Course Objectives
 
@@ -44,7 +44,6 @@ IST-687-Data-Science/
 │   │   ├── app.R                       # Interactive Shiny dashboard
 │   │   └── Cooling_Energy_Consumption_vs_Temp.png
 │   ├── Air_quality_Index_Visualizations/ # Air quality analysis
-│   ├── Syracuse_Crime/                 # Crime data analysis (deployed)
 │   └── Project_file/                   # Additional components
 │
 ├── 02-Lecture-Materials/               # Course learning activities
@@ -69,8 +68,7 @@ IST-687-Data-Science/
 - **Deployment**: Live web applications with professional visualizations
 
 ### Additional Projects:
-- **Air Quality Analysis**: Interactive environmental data visualization
-- **Syracuse Crime Analysis**: Geospatial crime pattern analysis (deployed on shinyapps.io)
+- **Air Quality Analysis**: Interactive environmental data visualization and correlation analysis
 
 ### 📚 **Course Materials**: [02-Lecture-Materials/](./02-Lecture-Materials/)
 Learning exercises and practice activities from the course.
@@ -123,9 +121,6 @@ The project works with several energy consumption datasets (available locally):
    
    # For air quality visualizations
    shiny::runApp("01-Project-Showcase/Air_quality_Index_Visualizations/")
-   
-   # For Syracuse crime analysis
-   shiny::runApp("01-Project-Showcase/Syracuse_Crime/")
    ```
 
 ## Key Findings and Results
@@ -149,4 +144,5 @@ This project is for educational purposes only.
 
 ---
 
-*Last Updated: February 2026*
+*Project Completed: November 2024*  
+*Repository Updated: February 2026*
