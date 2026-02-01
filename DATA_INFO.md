@@ -1,6 +1,6 @@
 # Dataset Information
 
-## 🚨 Large Files Excluded from Repository
+## Large Files Excluded from Repository
 
 Due to GitHub's 100MB file size limit, the following large data files are **not included** in this repository:
 
@@ -28,7 +28,7 @@ Due to GitHub's 100MB file size limit, the following large data files are **not 
 ### Energy Dataset Backup
 - `Energy_Dataset_Backup/Combined_energy_data_set_*.parquet` (69MB each)
 
-## 📊 Dataset Descriptions
+## Dataset Descriptions
 
 ### Energy Consumption Data
 - **Time Period:** May, June, July
@@ -42,7 +42,7 @@ Due to GitHub's 100MB file size limit, the following large data files are **not 
 3. **Filtering** → July-specific and aggregated data
 4. **Final Processing** → Analysis-ready datasets
 
-## 🔄 Reproducing the Analysis
+## Reproducing the Analysis
 
 To reproduce the analysis with full datasets:
 
@@ -53,7 +53,7 @@ To reproduce the analysis with full datasets:
    - `Submission Code ff.Rmd` - Final submission
    - `Test_data.Rmd` - Data testing
 
-## 📁 Alternative Data Storage Solutions
+## Alternative Data Storage Solutions
 
 For large datasets, consider:
 - **Git LFS (Large File Storage)** - For files up to 2GB
@@ -61,7 +61,7 @@ For large datasets, consider:
 - **Data Repositories** - Zenodo, Figshare, Dryad
 - **University Storage** - Institutional data repositories
 
-## 📧 Data Access
+## Data Access
 
 For access to the complete datasets, please contact:
 - **Repository Owner:** [Your Name]

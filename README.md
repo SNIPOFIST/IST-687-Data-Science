@@ -2,14 +2,14 @@
 
 This repository contains coursework and projects for IST-687 Data Science course as part of my Master's degree program.
 
-## 📋 Course Overview
+## Course Overview
 
 **Course:** IST-687 Data Science  
 **Institution:** Syracuse University  
 **Semester:** [Add semester/year]  
 **Instructor:** [Add instructor name]  
 
-## 🎯 Course Objectives
+## Course Objectives
 
 This course covers fundamental concepts and practical applications of data science, including:
 - Data collection, cleaning, and preprocessing
@@ -18,7 +18,7 @@ This course covers fundamental concepts and practical applications of data scien
 - Data-driven decision making
 - R programming and Shiny applications
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 IST-687-Data-Science/
@@ -57,7 +57,7 @@ IST-687-Data-Science/
     └── Combined_energy_data_set_*.parquet
 ```
 
-## 🚀 Main Projects
+## Main Projects
 
 ### 1. Electricity Consumption Prediction
 **Description:** A comprehensive analysis and prediction model for electricity consumption patterns.
@@ -86,7 +86,7 @@ IST-687-Data-Science/
 - `Syracuse_Crime/app.R` - Crime data visualization app
 - Deployed on shinyapps.io
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 - **R** - Primary programming language
 - **Shiny** - Interactive web applications
@@ -95,9 +95,9 @@ IST-687-Data-Science/
 - **dplyr** - Data manipulation
 - **parquet** - Efficient data storage format
 
-## 📊 Datasets
+## Datasets
 
-⚠️ **Note:** Large data files (*.parquet) are excluded from this repository due to GitHub's 100MB file size limit.
+**Note:** Large data files (*.parquet) are excluded from this repository due to GitHub's 100MB file size limit.
 
 The project works with several energy consumption datasets (available locally):
 - **Main Dataset:** `DATA.parquet` (65MB) - Primary energy consumption data
@@ -111,7 +111,7 @@ The project works with several energy consumption datasets (available locally):
 - Sample data and analysis code are available in the R Markdown files
 - All analysis can be reproduced with the original datasets
 
-## 🔧 Setup and Installation
+## Setup and Installation
 
 1. **Clone the repository:**
    ```bash
@@ -136,19 +136,19 @@ The project works with several energy consumption datasets (available locally):
    shiny::runApp("Syracuse_Crime/")
    ```
 
-## 📈 Key Findings and Results
+## Key Findings and Results
 
 [Add your key findings, insights, and results from the analysis]
 
-## 🤝 Contributing
+## Contributing
 
 This is a coursework repository. For academic integrity, please do not copy or submit this work as your own.
 
-## 📄 License
+## License
 
 This project is for educational purposes only.
 
-## 📞 Contact
+## Contact
 
 **Student:** [Your Name]  
 **Email:** [Your Email]  
