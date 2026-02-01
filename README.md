@@ -1,6 +1,16 @@
-# IST-687 Data Science
+# IST-687 Data Science Portfolio
 
-This repository contains coursework and projects for IST-687 Data Science course as part of my Master's degree program.
+## Project Showcase: Electricity Consumption Prediction System
+
+This repository showcases a comprehensive data science project that demonstrates advanced analytics, machine learning, and interactive application development. The main project involves building an electricity consumption prediction system using 2.2GB of real-world energy data.
+
+## Key Achievements
+
+- **Large-Scale Data Processing**: Successfully handled 2.2GB of electricity consumption data from 4000+ households
+- **Advanced Analytics**: Developed predictive models with high accuracy for energy consumption forecasting  
+- **Interactive Applications**: Built multiple Shiny web applications for data exploration and visualization
+- **Business Impact**: Created actionable insights for energy management and sustainability
+- **Technical Excellence**: Implemented scalable, reproducible data science workflows
 
 ## Course Overview
 
@@ -22,69 +32,51 @@ This course covers fundamental concepts and practical applications of data scien
 
 ```
 IST-687-Data-Science/
-├── README.md                           # This file
-├── Project-Description.pdf             # Course project description
-├── Project-Overview.pdf                # Project overview document
-├── IDS_Project.Rmd                     # Main project R Markdown file
-├── Submission Code ff.Rmd              # Final submission code
-├── Test_data.Rmd                       # Test data analysis
-├── Project_Observations                # Project observations and notes
+├── README.md                           # Main repository overview
+├── DATA_INFO.md                        # Information about excluded datasets
+├── Project_Observations                # Key project insights and findings
 │
-├── Data Files/
-│   ├── DATA.parquet                    # Main dataset
-│   ├── filtered_july_data.parquet      # Filtered July data
-│   ├── Combined_energy_data_set_*.parquet  # Combined energy datasets (1-10)
-│   ├── final_combined_energy_data*.parquet # Final combined datasets
-│   └── Cleaned_Dataset/                # Cleaned and processed datasets
-│       ├── Combined_energy_data_set_*.parquet
-│       ├── July cleaned data/          # July-specific cleaned data
-│       ├── May June and July/          # Multi-month analysis
-│       └── May_June_July_day_aggregated_data.parquet
-│
-├── Applications/
-│   ├── IDS_Project/                    # Main IDS project Shiny app
-│   │   ├── app.R                       # Shiny application
+├── 01-Project-Showcase/                # ⭐ MAIN PROJECT DELIVERABLES
+│   ├── README.md                       # Comprehensive project documentation
+│   ├── IDS_Project.Rmd                 # Main analysis and methodology
+│   ├── Submission Code ff.Rmd          # Final implementation
+│   ├── IDS_Project/                    # Electricity prediction app
+│   │   ├── app.R                       # Interactive Shiny dashboard
 │   │   └── Cooling_Energy_Consumption_vs_Temp.png
-│   ├── Air_quality_Index_Visualizations/  # Air quality visualization app
-│   │   └── app.R
-│   ├── Project_file/                   # Additional project files
-│   │   └── app.R
-│   └── Syracuse_Crime/                 # Syracuse crime analysis app
-│       ├── app.R
-│       └── rsconnect/                  # Deployment configuration
+│   ├── Air_quality_Index_Visualizations/ # Air quality analysis
+│   ├── Syracuse_Crime/                 # Crime data analysis (deployed)
+│   └── Project_file/                   # Additional components
 │
-└── Energy_Dataset_Backup/              # Backup of energy datasets
-    └── Combined_energy_data_set_*.parquet
+├── 02-Lecture-Materials/               # Course learning activities
+│   ├── README.md                       # Learning materials overview
+│   └── Test_data.Rmd                   # Practice exercises
+│
+└── 03-Course-Resources/                # Official course documentation
+    ├── README.md                       # Resources overview
+    ├── Project-Description.pdf         # Official project requirements
+    └── Project-Overview.pdf            # Course project guidelines
 ```
 
-## Main Projects
+## Quick Start - View the Project
 
-### 1. Electricity Consumption Prediction
-**Description:** A comprehensive analysis and prediction model for electricity consumption patterns.
+### 🎯 **Main Project**: [01-Project-Showcase/](./01-Project-Showcase/)
+**The comprehensive electricity consumption prediction system with detailed documentation, methodology, and results.**
 
-**Key Features:**
-- Data preprocessing and cleaning of energy consumption datasets
-- Time series analysis for consumption patterns
-- Interactive Shiny dashboard for data visualization
-- Predictive modeling for electricity demand forecasting
+### Key Project Highlights:
+- **Scale**: 2.2GB of real-world energy data from 4000+ households
+- **Technology**: Advanced R analytics with interactive Shiny dashboards  
+- **Impact**: Actionable insights for energy management and sustainability
+- **Deployment**: Live web applications with professional visualizations
 
-**Files:**
-- `IDS_Project.Rmd` - Main analysis notebook
-- `IDS_Project/app.R` - Interactive Shiny application
-- Various parquet files containing energy consumption data
+### Additional Projects:
+- **Air Quality Analysis**: Interactive environmental data visualization
+- **Syracuse Crime Analysis**: Geospatial crime pattern analysis (deployed on shinyapps.io)
 
-### 2. Air Quality Index Visualizations
-**Description:** Interactive visualizations for air quality data analysis.
+### 📚 **Course Materials**: [02-Lecture-Materials/](./02-Lecture-Materials/)
+Learning exercises and practice activities from the course.
 
-**Files:**
-- `Air_quality_Index_Visualizations/app.R` - Shiny app for AQI visualization
-
-### 3. Syracuse Crime Analysis
-**Description:** Analysis and visualization of crime data in Syracuse.
-
-**Files:**
-- `Syracuse_Crime/app.R` - Crime data visualization app
-- Deployed on shinyapps.io
+### 📋 **Course Resources**: [03-Course-Resources/](./03-Course-Resources/)
+Official project documentation and course guidelines.
 
 ## Technologies Used
 
@@ -126,14 +118,14 @@ The project works with several energy consumption datasets (available locally):
 
 3. **Run Shiny applications:**
    ```r
-   # For the main IDS project
-   shiny::runApp("IDS_Project/")
+   # For the main electricity prediction system
+   shiny::runApp("01-Project-Showcase/IDS_Project/")
    
    # For air quality visualizations
-   shiny::runApp("Air_quality_Index_Visualizations/")
+   shiny::runApp("01-Project-Showcase/Air_quality_Index_Visualizations/")
    
    # For Syracuse crime analysis
-   shiny::runApp("Syracuse_Crime/")
+   shiny::runApp("01-Project-Showcase/Syracuse_Crime/")
    ```
 
 ## Key Findings and Results

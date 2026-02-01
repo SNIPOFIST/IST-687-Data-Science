@@ -1,0 +1,130 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(arrow)
+
+energy_data <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet")
+head(energy_data)
+
+energy_data <- energy_data %>%
+  mutate(electricity = rowSums(select(., starts_with("out.electricity.")), na.rm = TRUE))
+
+
+energy_data <- energy_data %>%
+  select(starts_with("out.electricity"),time,building_id,electricity)
+
+
+head(energy_data$time,90)
+
+colnames(energy_data)
+
+energy_data<- energy_data %>%
+  filter(format(as.Date(date), "%m") %in% c("05", "06", "07"))
+
+
+```
+```{r}
+colnames(energy_data)
+
+columnnames <- function(names) {
+  names <- gsub("[^a-zA-Z0-9]", "_", names)  
+  names <- tolower(names) 
+  return(names)
+}
+
+colnames(energy_data) <- columnnames(colnames(energy_data))
+colnames(energy_data)
+
+
+
+
+# Function to clean column names
+clean_column_names <- function(column_names) {
+  # Remove the prefix and suffix
+  cleaned_names <- gsub("^out_electricity_", "", column_names)
+  cleaned_names <- gsub("_energy_consumption$", "", cleaned_names)
+  return(cleaned_names)
+}
+
+
+# Apply the function to clean the column names of your dataset
+colnames(energy_data) <- clean_column_names(colnames(energy_data))
+
+# View the updated column names
+colnames(energy_data)
+
+head(energy_data$electricity,20)
+
+
+```
+
+```{r}
+#converting hourly into daily basis
+library(dplyr)
+library(lubridate)
+
+energy_data$time <- ymd_hms(energy_data$time)
+energy_data$date <- as.Date(energy_data$time)
+
+library(dplyr)
+
+# Summarise the data by `building_id` and `date`
+energy_consumption_data <- energy_data %>%
+  group_by(building_id, date) %>%
+  summarise(
+    ceiling_fan = sum(ceiling_fan, na.rm = TRUE),
+    clothes_dryer = sum(clothes_dryer, na.rm = TRUE),
+    clothes_washer = sum(clothes_washer, na.rm = TRUE),
+    cooling_fans_pumps = sum(cooling_fans_pumps, na.rm = TRUE),
+    cooling = sum(cooling, na.rm = TRUE),
+    dishwasher = sum(dishwasher, na.rm = TRUE),
+    freezer = sum(freezer, na.rm = TRUE),
+    heating_fans_pumps = sum(heating_fans_pumps, na.rm = TRUE),
+    heating_hp_bkup = sum(heating_hp_bkup, na.rm = TRUE),
+    heating = sum(heating, na.rm = TRUE),
+    hot_tub_heater = sum(hot_tub_heater, na.rm = TRUE),
+    hot_tub_pump = sum(hot_tub_pump, na.rm = TRUE),
+    hot_water = sum(hot_water, na.rm = TRUE),
+    lighting_exterior = sum(lighting_exterior, na.rm = TRUE),
+    lighting_garage = sum(lighting_garage, na.rm = TRUE),
+    lighting_interior = sum(lighting_interior, na.rm = TRUE),
+    mech_vent = sum(mech_vent, na.rm = TRUE),
+    plug_loads = sum(plug_loads, na.rm = TRUE),
+    pool_heater = sum(pool_heater, na.rm = TRUE),
+    pool_pump = sum(pool_pump, na.rm = TRUE),
+    pv = sum(pv, na.rm = TRUE),
+    range_oven = sum(range_oven, na.rm = TRUE),
+    refrigerator = sum(refrigerator, na.rm = TRUE),
+    well_pump = sum(well_pump, na.rm = TRUE),
+    .groups = "drop" # Ensure grouping does not persist in the result
+  )
+
+# View the aggregated data
+head(energy_consumption_data)
+
+
+head(energy_consumption_data)
+view(energy_consumption_data)
+
+
+
+May_june_July_energy_consumption_data<- energy_consumption_data %>%
+  filter(format(as.Date(date), "%m") %in% c("05", "06", "07"))
+
+head(May_june_July_energy_consumption_data)
+dim(energy_consumption_data)
+
+
+write_parquet(energy_consumption_data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/May_June_July_Electricity_dataset.parquet")
+
+
+final <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/May_June_July_Electricity_dataset.parquet")
+
+
+```
+
