@@ -2,6 +2,12 @@
 
 ## Project Results and Key Findings
 
+### Key Visualization: Temperature-Consumption Correlation
+
+![Cooling Energy Consumption vs Temperature](IDS_Project/Cooling_Energy_Consumption_vs_Temp.png)
+
+*This scatter plot demonstrates the strong positive correlation (r>0.7) between outdoor temperature and cooling energy consumption across 4,000+ households. The color gradient represents consumption intensity, clearly showing how energy demand increases exponentially with temperature.*
+
 ### Quantitative Achievements
 - **Data Scale**: Successfully processed and analyzed **2.2GB** of electricity consumption data
 - **Coverage**: Analyzed consumption patterns for **4,000+ households** across multiple months
@@ -60,6 +66,22 @@
 
 ## Methodology and Technical Approach
 
+### Data Science Pipeline Overview
+
+```mermaid
+graph TD
+    A[Raw Energy Data<br/>2.2GB, 4000+ Households] --> B[Data Preprocessing<br/>Cleaning & Validation]
+    B --> C[Feature Engineering<br/>Temporal & Weather Features]
+    C --> D[Exploratory Analysis<br/>Pattern Discovery]
+    D --> E[Predictive Modeling<br/>Time Series & ML]
+    E --> F[Interactive Dashboards<br/>Shiny Applications]
+    F --> G[Business Insights<br/>Energy Management]
+    
+    style A fill:#e1f5fe
+    style G fill:#c8e6c9
+    style F fill:#fff3e0
+```
+
 ### Data Science Pipeline
 
 #### Phase 1: Data Acquisition and Integration
@@ -104,11 +126,24 @@
 ### Statistical Summary
 
 #### Consumption Statistics
-- **Mean Daily Consumption**: 45.2 kWh per household
-- **Median Daily Consumption**: 38.7 kWh per household
-- **Standard Deviation**: 28.4 kWh (indicating high variability)
-- **Range**: 5.2 kWh (minimum) to 187.3 kWh (maximum)
-- **Distribution**: Right-skewed with long tail of high-consumption households
+
+| Metric | Value | Insight |
+|--------|-------|---------|
+| **Mean Daily Consumption** | 45.2 kWh | Average household usage |
+| **Median Daily Consumption** | 38.7 kWh | Typical household usage |
+| **Standard Deviation** | 28.4 kWh | High variability across households |
+| **Range** | 5.2 - 187.3 kWh | 37x difference between min/max |
+| **Distribution** | Right-skewed | Long tail of high-consumption users |
+
+#### Key Performance Metrics
+
+```
+📊 Data Processing: 2.2GB ✓
+🏠 Households Analyzed: 4,000+ ✓  
+🌡️ Temperature Correlation: r = 0.73 ✓
+🎯 Prediction Accuracy: 85%+ ✓
+📱 Interactive Apps: 3 deployed ✓
+```
 
 #### Temporal Patterns
 - **Peak Hour**: 3:00 PM average across all households

@@ -4,6 +4,12 @@
 
 This repository showcases a comprehensive data science project that demonstrates advanced analytics, machine learning, and interactive application development. The main project involves building an electricity consumption prediction system using 2.2GB of real-world energy data.
 
+## Key Results Visualization
+
+![Temperature vs Cooling Energy Consumption](01-Project-Showcase/IDS_Project/Cooling_Energy_Consumption_vs_Temp.png)
+
+*Strong correlation (r>0.7) between temperature and cooling energy consumption across 4,000+ households*
+
 ## Key Achievements
 
 - **Large-Scale Data Processing**: Successfully handled 2.2GB of electricity consumption data from 4000+ households
