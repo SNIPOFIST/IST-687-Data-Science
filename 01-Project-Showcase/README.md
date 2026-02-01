@@ -50,19 +50,28 @@
 - Dynamic forecasting with confidence intervals
 - Peak demand identification and alerts
 
-**Key Visualizations**:
-- Scatter plots showing temperature-consumption relationships
-- Time series plots with trend analysis
-- Heatmaps for consumption pattern identification
-- Statistical summary tables with key metrics
+**Key Visualizations Generated**:
+- **Temperature-Consumption Scatter Plot**: Shows strong correlation (r>0.7) with color-coded intensity
+- **Electricity vs. Floor Area**: Scatter plot revealing building size impact on consumption
+- **Cooling/Heating Setpoint Analysis**: Linear regression plots showing HVAC impact
+- **Building ID Boxplots**: Consumption distribution across different building types
+- **Density Plots**: Statistical distribution of electricity consumption patterns
+- **Residual Analysis**: Model performance visualization for linear regression
+- **Feature Importance Charts**: XGBoost model variable importance rankings
 
 ### 2. Air Quality Integration Analysis
 **File**: `Air_quality_Index_Visualizations/app.R`
 
-**Features**:
-- Environmental factor correlation analysis
-- Multi-variable impact assessment
-- Interactive data exploration interface
+**Interactive Features**:
+- **Pollutant Selection**: Choose between Ozone (O3) and Nitrogen dioxide (NO2)
+- **Time Series Visualization**: Scatter plots showing pollutant levels over time
+- **Environmental Correlation**: Analysis of air quality impact on energy consumption
+- **Interactive Filtering**: Dynamic data exploration with dropdown selections
+
+**Generated Visualizations**:
+- Scatter plots of pollutant concentrations vs. time periods
+- Comparative analysis between different air quality indicators
+- Interactive plots with customizable parameters
 
 ## Methodology and Technical Approach
 
@@ -161,6 +170,56 @@ graph TD
 - **Consistency**: 99.2% of records passed validation checks
 - **Accuracy**: Cross-validated against utility billing data
 - **Timeliness**: Real-time data processing with <5 minute latency
+
+## Comprehensive Visualization Portfolio
+
+### Main Analysis Plots (Submission Code ff.Rmd)
+
+#### 1. **Building Characteristics Analysis**
+```r
+# Electricity Consumption by Building ID
+ggplot(final_merged_data, aes(x = as.factor(building_id), y = electricity)) +
+  geom_boxplot() + 
+  labs(title = "Electricity Consumption by Building ID")
+```
+
+#### 2. **Floor Area Impact Analysis**
+```r
+# Electricity Consumption vs. Floor Area
+ggplot(final_merged_data, aes(x = in.geometry_floor_area, y = electricity)) +
+  geom_point() +
+  labs(title = "Electricity Consumption vs. Floor Area")
+```
+
+#### 3. **Statistical Distribution Analysis**
+```r
+# Density Plot of Electricity Consumption
+ggplot(final_merged_data, aes(x = electricity)) +
+  geom_density(fill = "skyblue", alpha = 0.5) +
+  labs(title = "Density Plot of Electricity Consumption")
+```
+
+#### 4. **HVAC System Analysis (Multi-panel)**
+```r
+# Combined plot showing:
+# - Electricity vs. Cooling Setpoint
+# - Electricity vs. Heating Setpoint  
+# - Electricity vs. Number of Occupants
+combined_plot <- plot1 + plot2 + plot3 + plot_layout(ncol = 3)
+```
+
+### Interactive Shiny Applications
+
+#### 1. **Model Comparison Dashboard** (`IDS_Project/app.R`)
+- **Linear Regression Residual Plots**: Interactive residual analysis
+- **XGBoost Feature Importance**: Bar charts showing variable importance
+- **Bayesian Model Results**: Statistical model comparisons
+- **Model Selection Interface**: Radio buttons for different algorithms
+
+#### 2. **Air Quality Visualization** (`Air_quality_Index_Visualizations/app.R`)
+- **Pollutant Time Series**: Interactive scatter plots
+- **Dropdown Selection**: Choose between O3 and NO2 measurements
+- **Dynamic Filtering**: Real-time plot updates based on user selection
 
 ## Technical Implementation
 

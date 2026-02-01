@@ -74,7 +74,8 @@ IST-687-Data-Science/
 - **Deployment**: Live web applications with professional visualizations
 
 ### Additional Projects:
-- **Air Quality Analysis**: Interactive environmental data visualization and correlation analysis
+- **Air Quality Analysis**: Interactive environmental data visualization with O3 and NO2 pollutant tracking
+- **Comprehensive Visualization Suite**: 7+ different plot types including scatter plots, boxplots, density plots, and feature importance charts
 
 ### 📚 **Course Materials**: [02-Lecture-Materials/](./02-Lecture-Materials/)
 Learning exercises and practice activities from the course.
