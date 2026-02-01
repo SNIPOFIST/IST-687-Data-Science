@@ -1,0 +1,50 @@
+Observations 
+
+1. The parquet file is over written and fetches the recently updates data 
+2. The data set doesn't load the data uin large size but incrementally it loads and stores in the parquet
+when increasing the building house ID the data loads and fetches all the loaded data acurately 
+3.The range has to be properly defined to source the data 
+4.A new column named building ID is supposed to be created and entered in the data set
+
+
+To find 
+1. how the cost is calculated, do we have a variable for cost or are we performing a feature extraction ? -> we are extracting the electricity in KW units and calculating the rates
+
+
+
+
+Conclusions
+
+1. Find the maximum limit that the range fetches the accurate data and split the range so that the read and load for 5000 houses can be performed sparesly and then combines into a single data set
+2.
+
+
+# RESEARCH QUESTIONS 
+
+Optimization-Oriented Question:
+
+###
+Which appliances or systems contribute the most to electricity consumption, and how can targeted reductions minimize overall energy costs?
+Cost-Reduction Question:
+
+ANS : find the top 5 appliances that consume the most electricity usage and then find the dolution to reduce the energy costs
+###
+
+###
+What are the optimal operational strategies to reduce energy consumption and associated costs while maintaining the same living standards?
+###
+
+###
+will bedrooms make any difference in temperature
+###
+
+
+Columns that has total as 0 
+
+
+
+
+
+
+
+

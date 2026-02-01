@@ -1,0 +1,140 @@
+---
+title: "Test_data"
+author: "Hari Ram Selvaraj"
+date: "2024-12-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+# This code is for May June and July month day basis data 
+
+
+library(arrow)
+library(dbplyr)
+library(dplyr)
+library(tidyverse)
+library(data.table)
+library(arrow)
+library(dplyr)
+
+data <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet")
+
+# Function to filter for May, June, and July, and aggregate by day
+process_data <- function(df) {
+  df %>%
+    filter(format(as.Date(time), "%m") %in% c("05", "06", "07")) %>%  # Filter for May, June, July
+    mutate(date = as.Date(time)) %>%  # Extract the date (without time)
+    group_by(date) %>%  # Group by the date
+    summarise(across(everything(), ~ mean(. , na.rm = TRUE)))  # Aggregate by taking the mean for each day
+}
+
+# Apply the function to all datasets
+first_processed <- process_data(first)
+second_processed <- process_data(second)
+third_processed <- process_data(third)
+fourth_processed <- process_data(fourth)
+fifth_processed <- process_data(fifth)
+
+# Merge all processed datasets into one
+merged_data <- bind_rows(first_processed, second_processed, third_processed, fourth_processed, fifth_processed)
+
+dim(merged_data)
+
+head(merged_data)
+
+# Write the merged and aggregated dataset to a new parquet file
+write_parquet(merged_data, "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/May_June_July_day_aggregated_data.parquet")
+
+final <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/May_June_July_day_aggregated_data.parquet")
+
+
+final
+```
+
+
+```{r}
+
+library(arrow)
+library(dbplyr)
+library(dplyr)
+library(tidyverse)
+library(data.table)
+library(arrow)
+library(dplyr)
+
+
+data <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet")
+dim(data)
+
+# Assuming the data-set is already loaded into the variable 'data'
+new_data <- data %>%
+  select(starts_with("out.electricity"),time,building_id)
+
+
+new_data <- new_data %>%
+  mutate(electricity = rowSums(select(., starts_with("out.electricity.")), na.rm = TRUE))
+
+
+new_data <- new_data %>%
+  mutate(time = as.POSIXct(time, format = "%Y-%m-%d %H:%M:%S")) %>%  # Convert time column to POSIXct
+  filter(format(time, "%m") == "07")  # Filter for July (07)
+
+dim(new_data)
+
+write_parquet(new_data, "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_Month_Electricity_Consumption_data.parquet")
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+######RUN THISSSSS FOR JULY DATA ###########
+
+library(arrow)
+library(dbplyr)
+library(dplyr)
+library(tidyverse)
+library(data.table)
+library(arrow)
+library(dplyr)
+
+
+data <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet")
+
+# Assuming the data-set is already loaded into the variable 'data'
+new_data <- data %>%
+  select(starts_with("out.electricity"),time,building_id)
+
+write_parquet(new_data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/5000_House_Electricity_IDS.parquet")
+
+
+new_data <- new_data %>%
+  mutate(electricity = rowSums(select(., starts_with("out.electricity.")), na.rm = TRUE))
+
+
+new_data <- new_data %>%
+  mutate(time = as.POSIXct(time, format = "%Y-%m-%d %H:%M:%S")) %>%  # Convert time column to POSIXct
+  filter(format(time, "%m") == "07")  # Filter for July (07)
+
+
+
+write_parquet(new_data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_Month_Electricity_Consumption_data.parquet")
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

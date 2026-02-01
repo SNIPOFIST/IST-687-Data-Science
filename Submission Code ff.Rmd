@@ -1,0 +1,1541 @@
+---
+title: "Project Code"
+output: html_document
+date: "2024-12-04"
+---
+
+# loading libraries
+```{r}
+#Loading the Libraries
+library(arrow)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(shiny)
+library(caret)
+library(lattice)
+library(tidyverse)
+```
+
+
+# Load metadata 
+```{r}
+
+metadata <- read_csv("https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/data_dictionary.csv")
+
+```
+
+# Loading static house
+```{r}
+static_house_url <- "https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/static_house_info.parquet"
+static_house_data <- read_parquet(static_house_url)
+```
+
+
+```{r}
+ncol(static_house_data)
+
+colnames(static_house_data)
+
+head(static_house_data$in.sqft)
+
+unique(static_house_data$in.hvac_cooling_efficiency)
+
+```
+
+# Removal of columns based on 0 Variability
+```{r}
+static_house_data <- static_house_data[, !apply(static_house_data, 2, function(x) all(x == "None"))]
+
+
+# List of columns to remove  (unnecessary columns)
+columns_to_remove <- c("upgrade",                                      
+                        "weight",                                       
+                        "applicability",                                
+                        "in.ahs_region",                                
+                        "in.ashrae_iecc_climate_zone_2004",             
+                        "in.ashrae_iecc_climate_zone_2004_2_a_split",   
+                        "in.census_division",                           
+                        "in.census_division_recs",                      
+                        "in.census_region",                             
+                        "in.corridor",                                  
+                        "in.door_area",                                 
+                        "in.doors",                                     
+                        "in.eaves",                                     
+                        "in.emissions_electricity_folders",             
+                        "in.emissions_electricity_units",               
+                        "in.emissions_electricity_values_or_filepaths",   
+                        "in.emissions_fossil_fuel_units",               
+                        "in.emissions_fuel_oil_values",                 
+                        "in.emissions_natural_gas_values",              
+                        "in.emissions_propane_values",                  
+                        "in.emissions_scenario_names",                  
+                        "in.emissions_types",                           
+                        "in.emissions_wood_values",                     
+                        "in.generation_and_emissions_assessment_region",  
+                        "in.geometry_building_type_acs",                
+                        "in.geometry_building_type_height",             
+                        "in.geometry_building_type_recs",               
+                        "in.geometry_story_bin",                        
+                        "in.holiday_lighting",                          
+                        "in.hot_water_distribution",                    
+                        "in.hvac_system_is_faulted",                    
+                        "in.interior_shading",                          
+                        "in.lighting_interior_use",                     
+                        "in.lighting_other_use",                        
+                        "in.location_region",                           
+                        "in.natural_ventilation",                       
+                        "in.neighbors",                                 
+                        "in.plug_loads",                                
+                        "in.radiant_barrier",                           
+                        "in.schedules",                                 
+                        "in.simulation_control_timestep",               
+                        "in.state",                                     
+                        "in.units_represented",                         
+                        "in.water_heater_in_unit",                      
+                        "upgrade.hvac_cooling_efficiency",
+                       "in.simulation_control_run_period_begin_day_of_month",
+                       "upgrade.geometry_foundation_type",
+                       "in.simulation_control_run_period_begin_month",
+                       "in.simulation_control_run_period_calendar_year",
+                       "in.simulation_control_run_period_end_day_of_month",
+                       "in.simulation_control_run_period_end_month",
+                       "upgrade.insulation_roof","upgrade.water_heater_efficiency",
+                       "upgrade.hvac_cooling_efficiency","upgrade.infiltration_reduction",
+                       "upgrade.geometry_foundation_type","upgrade.clothes_dryer",
+                       "upgrade.insulation_ceiling","upgrade.ducts","upgrade.hvac_heating_type","upgrade.insulation_wall","upgrade.insulation_foundation_wall","upgrade.hvac_heating_efficiency","upgrade.cooking_range","in.city","in.clothes_washer_presence")  
+
+# Remove specified columns from the dataset  
+static_house_data <- static_house_data[, !names(static_house_data) %in% columns_to_remove]
+ncol(static_house_data)
+```
+
+# Cleaning of the data set
+```{r}
+binary_columns <- c(
+  "in.cooling_setpoint_has_offset", "in.has_pv", "in.heating_setpoint_has_offset",
+  "in.hvac_has_ducts", "in.hvac_has_zonal_electric_heating", "in.misc_freezer",
+  "in.misc_gas_fireplace", "in.misc_gas_grill", "in.misc_gas_lighting", "in.misc_pool",
+  "in.misc_pool_pump", "in.misc_well_pump", "in.tenure", "in.vacancy_status"
+)
+
+binary_columns_2 <- list(
+  in.cooling_setpoint_has_offset = c("No", "Yes"),
+  in.has_pv = c("No", "Yes"),
+  in.heating_setpoint_has_offset = c("No", "Yes"),
+  in.hvac_has_ducts = c("No", "Yes"),
+  in.hvac_has_zonal_electric_heating = c("No", "Yes"),
+  in.misc_freezer = c("None", "EF 12, National Average"),
+  in.misc_gas_fireplace = c("None", "Gas Fireplace"),
+  in.misc_gas_grill = c("None", "Gas Grill"),
+  in.misc_gas_lighting = c("None", "Gas Lighting"),
+  in.misc_pool = c("None", "Has Pool"),
+  in.misc_pool_pump = c("None", "1.0 HP Pump"),
+  in.misc_well_pump = c("None", "Typical Efficiency"),
+  in.tenure = c("Renter", "Owner"),
+  in.vacancy_status = c("Vacant", "Occupied")
+)
+
+static_house_data$in.clothes_dryer <- gsub("Gas", "Propane", static_house_data$in.clothes_dryer)
+static_house_data$in.clothes_dryer <- gsub("Propane, 80% Usage", "Propane, 120% Usage", static_house_data$in.clothes_dryer)
+static_house_data$in.clothes_dryer <- gsub("Propane, 100% Usage", "Propane, 120% Usage", static_house_data$in.clothes_dryer)
+
+static_house_data$in.cooking_range <- gsub("Gas", "Propane", static_house_data$in.cooking_range)
+static_house_data$in.cooking_range <- gsub("Propane, 80% Usage", "Propane, 120% Usage", static_house_data$in.cooking_range)
+static_house_data$in.cooking_range <- gsub("Propane, 100% Usage", "Propane, 120% Usage", static_house_data$in.cooking_range)
+static_house_data$in.heating_fuel <- gsub("Fuel Oil", "Other Fuel", static_house_data$in.heating_fuel)
+static_house_data$in.heating_fuel <- gsub("Propane", "Other Fuel", static_house_data$in.heating_fuel)
+static_house_data$in.heating_fuel <- gsub("Natural Gas", "Other Fuel", static_house_data$in.heating_fuel)
+
+static_house_data$in.ducts[static_house_data$in.ducts == "None"] <- NA
+static_house_data$in.insulation_ceiling[static_house_data$in.insulation_ceiling == "None"] <- "Uninsulated"
+static_house_data$in.insulation_floor[static_house_data$in.insulation_floor == "None"] <- "Uninsulated"
+static_house_data$in.heating_fuel[static_house_data$in.heating_fuel == "None"] <- NA
+static_house_data$in.insulation_foundation_wall[static_house_data$in.insulation_foundation_wall == "None"] <- "Uninsulated"
+static_house_data$in.insulation_rim_joist[static_house_data$in.insulation_rim_joist == "None"] <- "Uninsulated"
+static_house_data$in.pv_system_size[static_house_data$in.pv_system_size == "None"] <- 0
+static_house_data$in.insulation_slab[static_house_data$in.insulation_slab == "None"] <- "Uninsulated"
+# Update in.hvac_cooling_type based on the starting text of in.hvac_cooling_efficiency
+static_house_data$in.hvac_cooling_type <- ifelse(
+  startsWith(static_house_data$in.hvac_cooling_efficiency, "Heat pump"),
+  "Heat Pump",
+  ifelse(
+    startsWith(static_house_data$in.hvac_cooling_efficiency, "AC"),
+    "Central AC",
+    ifelse(
+      startsWith(static_house_data$in.hvac_cooling_efficiency, "Room AC"),
+      "Room AC",
+      static_house_data$in.hvac_cooling_type  # Retain original value if no match
+    )
+  )
+)
+
+none_columns <- function(data, columns_to_convert, custom_levels) {
+  for (column_name in columns_to_convert) {
+    if (!column_name %in% colnames(data)) {
+      warning(paste("Column", column_name, "not found in the data frame. Skipping."))
+      next
+    }
+    if (!is.character(data[[column_name]])) {
+      warning(paste("Column", column_name, "is not a character column. Skipping."))
+      next
+    }
+    if (!column_name %in% names(custom_levels)) {
+      warning(paste("No custom levels provided for column", column_name, "Skipping."))
+      next
+    }
+    levels <- custom_levels[[column_name]]
+    data[[column_name]] <- factor(data[[column_name]], levels = levels, labels = seq_along(levels) - 1)
+  }
+  return(data)
+}
+
+valid_none_columns <- c(
+  "in.ceiling_fan", "in.clothes_dryer", "in.clothes_washer", "in.dishwasher",
+  "in.geometry_attic_type", "in.geometry_garage", "in.hvac_cooling_efficiency",
+  "in.hvac_cooling_partial_space_conditioning", "in.hvac_cooling_type", "in.hvac_heating_efficiency",
+  "in.hvac_heating_type", "in.hvac_heating_type_and_fuel", "in.misc_extra_refrigerator",
+  "in.misc_hot_tub_spa", "in.misc_pool_heater", "in.refrigerator"
+)
+
+valid_none_columns_2 <- list(
+  in.ceiling_fan = c("None", "Standard Efficiency, No Usage", "Standard Efficiency"),
+  in.clothes_washer = c(
+    "None", "EnergyStar, 80% Usage", "EnergyStar, 100% Usage",
+    "EnergyStar, 120% Usage", "Standard, 80% Usage", "Standard, 100% Usage", "Standard, 120% Usage"
+  ),
+  in.clothes_dryer = c(
+    "None", "Propane, 120% Usage", "Electric, 80% Usage", "Electric, 100% Usage", "Electric, 120% Usage"
+  ),
+  in.misc_extra_refrigerator = c("None", "EF 19.9", "EF 17.6", "EF 15.9", "EF 10.5", "EF 10.2", "EF 6.7"),
+  in.misc_hot_tub_spa = c("None", "Gas", "Electric"),
+  in.misc_pool_heater = c("None", "Solar", "Gas", "Electric"),
+  in.refrigerator = c(
+    "None", "EF 19.9, 100% Usage", "EF 17.6, 100% Usage", "EF 15.9, 100% Usage",
+    "EF 10.5, 100% Usage", "EF 10.2, 100% Usage", "EF 6.7, 100% Usage"
+  ),
+  in.hvac_cooling_type = c("None", "Room AC", "Heating Pump", "Central AC"),
+  in.hvac_heating_efficiency = c( "ASHP, SEER 10, 6.2 HSPF","ASHP, SEER 13, 7.7 HSPF","ASHP, SEER 15, 8.5 HSPF","Electric Baseboard, 100% Efficiency","Electric Boiler, 100% AFUE","Electric Furnace, 100% AFUE","Electric Wall Furnace, 100% AFUE","Fuel Boiler, 76% AFUE","Fuel Boiler, 80% AFUE","Fuel Boiler, 90% AFUE","Fuel Furnace, 60% AFUE","Fuel Furnace, 76% AFUE","Fuel Furnace, 80% AFUE","Fuel Furnace, 92.5% AFUE","Fuel Wall/Floor Furnace, 60% AFUE","Fuel Wall/Floor Furnace, 68% AFUE","None","Other","Shared Heating"
+  )
+)
+
+convert_without_none_function <- function(data, columns_to_convert, custom_levels) {
+  for (column_name in columns_to_convert) {
+    if (!column_name %in% colnames(data)) {
+      warning(paste("Column", column_name, "not found in the data frame. Skipping."))
+      next
+    }
+    if (!is.character(data[[column_name]])) {
+      warning(paste("Column", column_name, "is not a character column. Skipping."))
+      next
+    }
+    if (!column_name %in% names(custom_levels)) {
+      warning(paste("No custom levels provided for column", column_name, "Skipping."))
+      next
+    }
+    levels <- custom_levels[[column_name]]
+    data[[column_name]] <- factor(data[[column_name]], levels = levels, labels = seq_along(levels))
+  }
+  return(data)
+}
+
+invalid_none_columns_to_convert <- c(
+  "in.building_america_climate_zone", "in.cooking_range", "in.ducts", "in.geometry_floor_area",
+  "in.geometry_foundation_type", "in.geometry_wall_exterior_finish", "in.geometry_wall_type",
+  "in.heating_fuel", "in.hot_water_fixtures", "in.insulation_ceiling", "in.insulation_floor",
+  "in.insulation_foundation_wall", "in.insulation_rim_joist", "in.insulation_roof", "in.insulation_slab",
+  "in.insulation_wall", "in.lighting", "in.roof_material", "in.usage_level", "in.water_heater_efficiency",
+  "in.water_heater_fuel", "in.window_areas", "in.windows"
+)
+
+invalid_none_custom <- list(
+  in.building_america_climate_zone = c("Marine", "Mixed-Humid", "Mixed-Dry", "Hot-Humid", "Hot-Dry", "Cold", "Very Cold"),
+  in.cooking_range = c("Propane, 120% Usage", "Electric, 80% Usage", "Electric, 100% Usage", "Electric, 120% Usage", "None"),
+  in.heating_fuel = c("Other Fuel", "Electricity", "None"),
+  in.hot_water_fixtures = c("50% Usage", "100% Usage", "200% Usage"),
+  in.insulation_ceiling = c("R-49", "R-38", "R-30", "R-19", "R-13", "R-7", "Uninsulated"),
+  in.insulation_floor = c("Ceiling R-30", "Ceiling R-19", "Ceiling R-13", "Uninsulated"),
+  in.ducts = c(
+    "0% Leakage, Uninsulated", "10% Leakage, R-8", "10% Leakage, R-6,", "10% Leakage, R-4",
+    "20% Leakage, R-8", "30% Leakage, R-8", "20% Leakage, R-6", "20% Leakage, R-4",
+    "30% Leakage, R-6", "10% Leakage, Uninsulated", "20% Leakage, Uninsulated", 
+    "30% Leakage, R-4", "30% Leakage, Uninsulated", "None"
+  ),
+  in.geometry_floor_area = c("0-499", "500-749", "750-999", "1000-1499", "1500-1999", "2000-2499", "2500-2999", "3000-3999", "4000+"),
+  in.geometry_foundation_type = c("Ambient", "Slab", "Unvented Crawlspace", "Unheated Basement", "Vented Crawlspace", "Heated Basement"),
+  in.geometry_wall_exterior_finish = c(
+    "Aluminum, Light", "Vinyl, Light", "Stucco, Light", "Brick, Light", "Fiber-Cement, Light",
+    "Stucco, Medium/Dark", "Brick, Medium/Dark", "Wood, Medium/Dark", "Shingle, Composition, Medium", 
+    "Shingle, Asbestos, Medium", "None"
+  ),
+  in.geometry_wall_type = c("Concrete", "Steel Frame", "Brick", "Wood Frame"),
+  in.insulation_foundation_wall = c("Wall R-15, Exterior", "Wall R-10, Exterior", "Wall R-5, Exterior", "Uninsulated"),
+  in.insulation_rim_joist = c("Uninsulated", "R-5, Exterior", "R-10, Exterior", "R-15, Exterior"),
+  in.insulation_roof = c(
+    "Finished, R-49", "Finished, R-38", "Finished, R-30", "Finished, R-19", "Finished, R-13", 
+    "Finished, R-7", "Finished, Uninsulated", "Unfinished, Uninsulated"
+  ),
+  in.insulation_slab = c(
+    "2ft R10 Perimeter, Vertical", "2ft R10 Under, Horizontal", "2ft R5 Perimeter, Vertical", 
+    "2ft R5 Under, Horizontal", "Uninsulated"
+  ),
+  in.water_heater_fuel = c("Natural Gas", "Fuel Oil", "Propane", "Electricity", "Other Fuel"),
+  in.window_areas = c(
+    "F6 B6 L6 R6", "F9 B9 L9 R9", "F12 B12 L12 R12", "F15 B15 L15 R15", 
+    "F18 B18 L18 R18", "F30 B30 L30 R30"
+  ),
+  in.windows = c(
+    "Triple, Low-E, Non-metal, Air, L-Gain", "Double, Low-E, Non-metal, Air, M-Gain",
+    "Double, Clear, Non-metal, Air, Exterior Clear Storm", "Double, Clear, Non-metal, Air",
+    "Double, Clear, Metal, Air, Exterior Clear Storm", "Double, Clear, Metal, Air",
+    "Single, Clear, Non-metal", "Single, Clear, Non-metal, Exterior Clear Storm",
+    "Single, Clear, Metal", "Single, Clear, Metal, Exterior Clear Storm"
+  ),
+  in.insulation_wall = c(
+    "Brick, 12-in, 3-wythe, R-19", "CMU, 6-in Hollow, R-19", "Wood Stud, R-19", 
+    "Brick, 12-in, 3-wythe, R-15", "CMU, 6-in Hollow, R-15", "Wood Stud, R-15",
+    "Brick, 12-in, 3-wythe, R-11", "CMU, 6-in Hollow, R-11", "Wood Stud, R-11",
+    "Brick, 12-in, 3-wythe, R-7", "CMU, 6-in Hollow, R-7", "Wood Stud, R-7",
+    "Brick, 12-in, 3-wythe, Uninsulated", "CMU, 6-in Hollow, Uninsulated", "Wood Stud, Uninsulated"
+  ),
+  in.lighting = c("100% LED", "100% CFL", "100% Incandescent"),
+  in.roof_material = c("Tile, Concrete", "Tile, Clay or Ceramic", "Slate", "Wood Shingles", "Composition Shingles", "Asphalt Shingles, Medium", "Metal, Dark"),
+  in.usage_level = c("Low", "Medium", "High"),
+  in.water_heater_efficiency = c(
+    "Natural Gas Tankless", "Propane Tankless", "FIXME Fuel Oil Indirect", "Fuel Oil Indirect", 
+    "Natural Gas Premium", "Propane Premium", "Fuel Oil Premium", "Natural Gas Standard", 
+    "Propane Standard", "Fuel Oil Standard", "Electric Tankless", "Electric Premium", 
+    "Electric Standard", "Electric Heat Pump, 80 gal", "Other Fuel"
+  )
+)
+
+cooling_setpoint_function <- function(data, column_name) {
+  # Define the mapping of characters to integers
+  mapping <- c(
+    "Day Setup" = 8, "Day Setup +1h" = 9, "Day Setup +2h" = 10, "Day Setup +3h" = 11,
+    "Day Setup +4h" = 12, "Day Setup +5h" = 13, "Day Setup -1h" = 7, "Day Setup -2h" = 6,
+    "Day Setup -3h" = 5, "Day Setup -4h" = 4, "Day Setup -5h" = 3, "Day Setup and Night Setback" = 17,
+    "Day Setup and Night Setback +1h" = 18, "Day Setup and Night Setback +2h" = 19,
+    "Day Setup and Night Setback +3h" = 20, "Day Setup and Night Setback +4h" = 21,
+    "Day Setup and Night Setback +5h" = 22, "Day Setup and Night Setback -1h" = 16,
+    "Day Setup and Night Setback -2h" = 15, "Day Setup and Night Setback -3h" = 14,
+    "Day Setup and Night Setback -4h" = 13, "Day Setup and Night Setback -5h" = 12,
+    "Day and Night Setup" = 17, "Day and Night Setup +1h" = 18, "Day and Night Setup +2h" = 19,
+    "Day and Night Setup +3h" = 20, "Day and Night Setup +4h" = 21, "Day and Night Setup +5h" = 22,
+    "Day and Night Setup -1h" = 16, "Day and Night Setup -2h" = 15, "Day and Night Setup -3h" = 14,
+    "Day and Night Setup -4h" = 13, "Day and Night Setup -5h" = 12, "Night Setback" = 9,
+    "Night Setback +1h" = 10, "Night Setback +2h" = 11, "Night Setback +3h" = 12,
+    "Night Setback +4h" = 13, "Night Setback +5h" = 14, "Night Setback -1h" = 8,
+    "Night Setback -2h" = 7, "Night Setback -3h" = 6, "Night Setback -4h" = 5,
+    "Night Setback -5h" = 4, "Night Setup" = 9, "Night Setup +1h" = 10, "Night Setup +2h" = 11,
+    "Night Setup +3h" = 12, "Night Setup +4h" = 13, "Night Setup +5h" = 14, "Night Setup -1h" = 8,
+    "Night Setup -2h" = 7, "Night Setup -3h" = 6, "Night Setup -4h" = 5, "Night Setup -5h" = 4,
+    "None" = 0
+  )
+
+  if (!column_name %in% colnames(data)) {
+    stop(paste("Column", column_name, "not found in the data frame."))
+  }
+
+  data[[column_name]] <- sapply(data[[column_name]], function(value) {
+    if (is.null(value) || is.na(value) || value == "") {
+      return(NA)
+    }
+    if (value %in% names(mapping)) {
+      return(mapping[value])
+    } else {
+      warning(paste("Unrecognized value:", value))
+      return(NA)
+    }
+  })
+  data[[column_name]] <- as.numeric(data[[column_name]])
+  return(data)
+}
+
+heating_setpoint_function <- function(data, column_name) {
+  mapping <- c(
+    "Day" = 8, "Day +1h" = 9, "Day +2h" = 10, "Day +3h" = 11, "Day +4h" = 12,
+    "Day +5h" = 13, "Day -1h" = 7, "Day -2h" = 6, "Day -3h" = 5, "Day -4h" = 4,
+    "Day -5h" = 3, "Day and Night" = 17, "Day and Night +1h" = 18, "Day and Night +2h" = 19,
+    "Day and Night +3h" = 20, "Day and Night +4h" = 21, "Day and Night +5h" = 22,
+    "Day and Night -1h" = 16, "Day and Night -2h" = 15, "Day and Night -3h" = 14,
+    "Day and Night -4h" = 13, "Day and Night -5h" = 12, "Night" = 9, "Night +1h" = 10,
+    "Night +2h" = 11, "Night +3h" = 12, "Night +4h" = 13, "Night +5h" = 14,
+    "Night -1h" = 8, "Night -2h" = 7, "Night -3h" = 6, "Night -4h" = 5, "Night -5h" = 4,
+    "None" = 0
+  )
+
+  if (!column_name %in% colnames(data)) {
+    stop(paste("Column", column_name, "not found in the data frame."))
+  }
+
+  data[[column_name]] <- sapply(data[[column_name]], function(value) {
+    if (is.null(value) || is.na(value) || value == "") {
+      return(NA)
+    }
+    if (value %in% names(mapping)) {
+      return(mapping[value])
+    } else {
+      warning(paste("Unrecognized value:", value))
+      return(NA)
+    }
+  })
+  data[[column_name]] <- as.numeric(data[[column_name]])
+  return(data)
+}
+cleaning_integer_function <- function(data, columns_to_clean) {
+  for (column_name in names(columns_to_clean)) {
+    if (!column_name %in% colnames(data)) {
+      warning(paste("Column", column_name, "not found in the data frame. Skipping."))
+      next
+    }
+    if (!is.character(data[[column_name]]) && !is.numeric(data[[column_name]])) {
+      warning(paste("Column", column_name, "is not character or numeric. Skipping."))
+      next
+    }
+    characters_to_remove <- columns_to_clean[[column_name]]
+    for (char in characters_to_remove) {
+      data[[column_name]] <- gsub(char, "", data[[column_name]])
+    }
+    data[[column_name]] <- as.integer(data[[column_name]])
+  }
+  return(data)
+}
+
+integers_columns_to_be_cleaned <- list(
+  "in.bathroom_spot_vent_hour" = c("Hour"),
+  "in.cooling_setpoint" = c("F"),
+  "in.cooling_setpoint_offset_magnitude" = c("F"),
+  "in.heating_setpoint" = c("F"),
+  "in.heating_setpoint_offset_magnitude" = c("F"),
+  "in.plug_load_diversity" = c("%"),
+  "in.range_spot_vent_hour" = c("Hour"),
+  "in.infiltration" = c(" ACH50"),
+  "in.occupants" = c("+"),
+  "in.pv_system_size" = c(" kWDC")
+)
+
+factor_conversion <- function(data, columns_to_convert, custom_levels = NULL) {
+  for (column_name in columns_to_convert) {
+    if (!column_name %in% colnames(data)) {
+      warning(paste("Column", column_name, "not found in the data frame. Skipping."))
+      next
+    }
+    if (!is.character(data[[column_name]])) {
+      warning(paste("Column", column_name, "is not a character column. Skipping."))
+      next
+    }
+    unique_values <- unique(data[[column_name]])
+    if (length(unique_values) != 2) {
+      warning(paste("Column", column_name, "does not have exactly two unique values. Skipping."))
+      next
+    }
+    if (!is.null(custom_levels) && column_name %in% names(custom_levels)) {
+      levels <- custom_levels[[column_name]]
+    } else {
+      levels <- sort(unique_values)
+    }
+    data[[column_name]] <- factor(data[[column_name]], levels = levels, labels = c(0, 1), ordered = TRUE)
+  }
+  return(data)
+}
+
+static_house_data <- cleaning_integer_function(static_house_data, integers_columns_to_be_cleaned)
+static_house_data <- factor_conversion(static_house_data, binary_columns, binary_columns_2)
+static_house_data <- none_columns(static_house_data, valid_none_columns, valid_none_columns_2)
+static_house_data <- convert_without_none_function(static_house_data, invalid_none_columns_to_convert, invalid_none_custom)
+static_house_data <- cooling_setpoint_function(static_house_data, "in.cooling_setpoint_offset_period")
+static_house_data <- heating_setpoint_function(static_house_data, "in.heating_setpoint_offset_period")
+```
+
+#Loading weather data
+```{r}
+base_url <- "https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/weather/2023-weather-data/"
+
+county_codes <- unique(static_house_data$in.county) 
+
+county <- function(county_code) {
+  url <- paste0(base_url, county_code, ".csv")
+  data <- read.csv(url)
+  return(data)
+}
+county_list <- lapply(county_codes, county)
+names(county_list) <- county_codes
+
+#i just wanted to test if the dataset is properly loaded so tried out for two county codes
+head(county_list[["G4500830"]])
+head(county_list[["G4500410"]])
+```
+
+```{r}
+base_url <- "https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/weather/2023-weather-data/"
+county_codes <- unique(static_house_data$in.county)
+urls <- paste0(base_url, county_codes, ".csv")
+urls
+```
+
+
+#only for the month of july:
+```{r}
+#here, i have first made a function to take only july data into consideration
+library(lubridate)
+july_weather <- function(data) {
+data$date_time <- ymd_hms(data$date_time)
+data <- data[month(data$date_time)==7,]
+return(data)
+}
+
+counties <- names(county_list)
+
+julyweather <- lapply(county_list[counties], july_weather)
+
+for (i in seq_along(julyweather)) {
+julyweather[[i]]$county_code <- counties[i]}
+
+july_weatherdata <- do.call(rbind, julyweather)
+
+rownames(july_weatherdata) <-NULL
+
+```
+
+```{r}
+#fixing null values- i did it with linear interpolation
+library(imputeTS)
+
+july_weatherdata[july_weatherdata == 0.00] <- NA
+for (col_name in colnames(july_weatherdata)) {
+  if (is.numeric(july_weatherdata[[col_name]])) {  
+    july_weatherdata[[col_name]] <- na_interpolation(july_weatherdata[[col_name]], option = "linear")
+  }
+}
+
+#there were trailing zeros so i removed them too
+for (col_name in colnames(july_weatherdata)) {
+  if (is.numeric(july_weatherdata[[col_name]])) {  
+    july_weatherdata[[col_name]] <- as.numeric(format(july_weatherdata[[col_name]], trim = TRUE, scientific = FALSE, digits = 5))
+  }
+}
+head(july_weatherdata)
+
+```
+
+```{r}
+#fixing the column name
+
+columnnames <- function(names) {
+  names <- gsub("[^a-zA-Z0-9]", "_", names) 
+  names <- tolower(names)  
+  return(names)
+}
+
+colnames(july_weatherdata) <- columnnames(colnames(july_weatherdata))
+colnames(july_weatherdata)
+
+#i still didnt like how the column names looked so i manually typed in
+colnames(july_weatherdata) <- c(
+  "date_time",          
+  "dry_bulb_temperature",      
+  "relative_humidity",           
+  "wind_speed",    
+  "wind_direction", 
+  "global_horizontal_radiation",      
+  "direct_normal_radiation",       
+  "diffuse_horizontal_radiation",      
+  "county_code"        
+)
+
+colnames(july_weatherdata)
+
+```
+
+
+# Merging static house data with weather data by county code
+```{r}
+merged_data <- merge(static_house_data, july_weatherdata, by.x = "in.county",
+                     by.y = "county_code", all = FALSE)  
+```
+
+# Energy Dataset loading
+```{r}
+
+library(arrow)
+library(dbplyr)
+library(dplyr)
+library(tidyverse)
+library(data.table)
+library(arrow)
+library(dplyr)
+
+energy_data <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet copy")
+dim(data)
+
+colnames(energy_data)
+
+
+# Select columns that start with "out.electricity", along with "time" and "building_id"
+new_data <- energy_data %>% select(starts_with("out.electricity"),time,building_id) # Matches all columns starting with "out.electricity"time,                           # 
+
+
+new_data <- new_data %>%
+mutate(electricity = rowSums(select(., starts_with("out.electricity.")), na.rm = TRUE))
+
+new_data <- new_data %>%
+mutate(time = as.POSIXct(time, format = "%Y-%m-%d %H:%M:%S")) %>%  # Convert time column to POSIXct
+filter(format(time, "%m") == "07")  # Filter for July (07)
+write_parquet(new_data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/ filtered_july_data.parquet")
+
+```
+
+```{r}
+new_data$combined_key <- paste(new_data$building_id, new_data$time, sep = "_")
+merged_data$combined_key <- paste(merged_data$bldg_id, merged_data$date_time, sep = "_")
+```
+
+# # Merging the energy data with the new key created to create final merged data
+```{r}
+final_merged_data <- merge(new_data, merged_data, 
+                           by = "combined_key",
+                            all = FALSE)
+```
+
+# Arrange by combined key
+```{r}
+final_merged_data <- final_merged_data %>%
+  arrange(combined_key)
+```
+
+
+
+# Adjusting for missing values using backward/forward interpolation as the missing
+# values.
+
+```{r}
+library(tidyverse)
+library(zoo)
+final_merged_data$in.ceiling_fan <- na.locf(final_merged_data$in.ceiling_fan, na.rm = FALSE)
+final_merged_data$in.ceiling_fan <- na.locf(final_merged_data$in.ceiling_fan, na.rm = FALSE, fromLast = TRUE)
+
+final_merged_data$in.ducts <- na.locf(final_merged_data$in.ducts, na.rm = FALSE)
+final_merged_data$in.ducts <- na.locf(final_merged_data$in.ducts, na.rm = FALSE, fromLast = TRUE)
+
+final_merged_data$in.hvac_cooling_type <- na.locf(final_merged_data$in.hvac_cooling_type, na.rm = FALSE)
+final_merged_data$in.hvac_cooling_type <- na.locf(final_merged_data$in.hvac_cooling_type, na.rm = FALSE, fromLast = TRUE)
+
+final_merged_data$in.hvac_heating_efficiency <- na.locf(final_merged_data$in.hvac_heating_efficiency, na.rm = FALSE)
+final_merged_data$in.hvac_heating_efficiency <- na.locf(final_merged_data$in.hvac_heating_efficiency, na.rm = FALSE, fromLast = TRUE)
+
+final_merged_data$in.ceiling_fan <- na.locf(final_merged_data$in.ceiling_fan, na.rm = FALSE)
+final_merged_data$in.ceiling_fan <- na.locf(final_merged_data$in.ceiling_fan, na.rm = FALSE, fromLast = TRUE)
+
+
+#Removing rows for 2 columns.
+
+final_merged_data <- final_merged_data %>%
+  filter(!is.na(in.heating_fuel), !is.na(in.occupants))
+```
+
+# EXPLORATORY ANALYSIS - Creating descriptive statistics and correlation table
+
+```{r}
+summary_statistics <- function(data) {
+  # Initialize a list to store summary statistics for each column
+  summary_list <- list()
+  
+  # Loop through each column in the dataset
+  for (col_name in names(data)) {
+    # Extract the current column's data
+    col_data <- data[[col_name]]
+    
+    # Create a template for storing statistics for the column
+    # This ensures all columns have the same structure in the summary
+    stats <- data.frame(
+      Column = col_name,                # Name of the column
+      Type = NA,                        # Data type (to be filled later)
+      Mean = NA,                        # Mean (only for numerical data)
+      Median = NA,                      # Median (only for numerical data)
+      SD = NA,                          # Standard deviation (only for numerical data)
+      Min = NA,                         # Minimum value (only for numerical data)
+      Max = NA,                         # Maximum value (only for numerical data)
+      Mode = NA,                        # Mode (only for categorical data)
+      Unique_Values = NA,               # Number of unique values
+      Most_Frequent_Count = NA,         # Frequency of the most common value (categorical only)
+      Missing = sum(is.na(col_data)),   # Count of missing values
+      stringsAsFactors = FALSE          # Ensure no automatic conversion to factors
+    )
+    
+    # If the column is numeric, calculate numerical statistics
+    if (is.numeric(col_data)) {
+      stats$Type <- "Numeric"                           # Specify type as numeric
+      stats$Mean <- mean(col_data, na.rm = TRUE)        # Calculate mean, ignoring NAs
+      stats$Median <- median(col_data, na.rm = TRUE)    # Calculate median, ignoring NAs
+      stats$SD <- sd(col_data, na.rm = TRUE)            # Calculate standard deviation
+      stats$Min <- min(col_data, na.rm = TRUE)          # Find minimum value
+      stats$Max <- max(col_data, na.rm = TRUE)          # Find maximum value
+    
+    # If the column is categorical (character or factor), calculate frequency-based stats
+    } else if (is.character(col_data) || is.factor(col_data)) {
+      stats$Type <- "Categorical"                       # Specify type as categorical
+      freq_table <- table(col_data, useNA = "ifany")    # Create frequency table
+      stats$Mode <- names(freq_table)[which.max(freq_table)] # Find the most frequent value
+      stats$Unique_Values <- length(unique(col_data))   # Count unique values
+      stats$Most_Frequent_Count <- max(freq_table)      # Count occurrences of the most common value
+    
+    # For other data types (e.g., dates, logical), handle them generically
+    } else {
+      stats$Type <- paste(class(col_data), collapse = ", ") # Combine multiple classes into one string
+      stats$Unique_Values <- length(unique(col_data))       # Count unique values
+    }
+    
+    # Add the column's stats to the summary list
+    summary_list[[col_name]] <- stats
+  }
+  
+  # Combine all individual column statistics into a single data frame
+  summary_df <- do.call(rbind, summary_list) # Safely combine all rows into a data frame
+  rownames(summary_df) <- NULL               # Remove row names for cleaner output
+  
+  # Return the summary as a data frame
+  return(summary_df)
+}
+summary_stats <- summary_statistics(final_merged_data)
+
+library(data.table)
+
+# Function to compute correlation table
+correlation_table <- function(data) {
+  # Ensure data is a data.table
+  if (!inherits(data, "data.table")) {
+    data <- as.data.table(data)
+  }
+  
+  # Select only numerical columns
+  numerical_cols <- names(data)[sapply(data, is.numeric)]
+  
+  # Check if there are enough numerical columns
+  if (length(numerical_cols) < 2) {
+    stop("Not enough numerical columns to compute a correlation table.")
+  }
+  
+  # Compute correlation matrix
+  corr_matrix <- cor(data[, ..numerical_cols])
+  
+  # Return the correlation matrix
+  return(corr_matrix)
+}
+
+# Example usage:
+corr_table <- correlation_table(final_merged_data)
+print(corr_table)
+```
+
+# Read again if needed #
+```{r}
+
+library(arrow)
+final_merged_data <- data.frame(read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/ DATA.parquet"))
+```
+
+# Converting the factor variables to numeric to conduct the modeling 
+```{r}
+library(data.table)
+
+# Ensure data is a data.table
+final_merged_data <- as.data.table(final_merged_data)
+
+# Convert all categorical variables to numeric
+categorical_cols <- names(final_merged_data)[sapply(final_merged_data, is.factor) | sapply(final_merged_data, is.character)]
+final_merged_data[, (categorical_cols) := lapply(.SD, function(x) as.numeric(as.factor(x))), .SDcols = categorical_cols]
+
+# Check the result
+str(final_merged_data)
+```
+
+# Library activations
+```{r}
+library(caret)
+library(xgboost)
+library(dplyr)
+```
+
+# Write a new parquet and then reading, to avoid re-running the code.
+```{r}
+write_parquet(final_merged_data, "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/ DATA.parquet")
+```
+
+#TRAIN TEST SPLIT
+```{r}
+library(caret)
+library(dplyr)
+
+# Train-test split (60-40)
+set.seed(42)
+trainIndex <- createDataPartition(final_merged_data$electricity, p = 0.6, list = FALSE)
+train_data <- final_merged_data[trainIndex, ]
+test_data <- final_merged_data[-trainIndex, ]
+```
+
+
+# Train and test Data 
+
+```{r}
+# Evaluate Linear Regression
+evaluate_model <- function(actual, predicted) {
+  mse <- mean((actual - predicted)^2)
+  mae <- mean(abs(actual - predicted))
+  r2 <- 1 - (sum((actual - predicted)^2) / sum((actual - mean(actual))^2))
+  return(list(MSE = mse, MAE = mae, R2 = r2))
+}
+```
+
+
+
+# Research question 1: Models - Linear regression
+```{r}
+# Linear Regression Model
+linear_model_r1 <- lm(
+  electricity ~ building_id + in.geometry_floor_area + in.geometry_stories + in.vintage + 
+    in.geometry_garage + in.ceiling_fan + in.insulation_slab + in.ducts + in.roof_material + in.tenure,
+  data = final_merged_data
+)
+
+# Display model summary
+summary(linear_model_r1)
+
+colnames(final_merged_data)
+
+
+library(ggplot2)
+
+# Plotting electricity against building_id
+ggplot(final_merged_data, aes(x = as.factor(building_id), y = electricity)) +
+  geom_boxplot() + 
+  labs(
+    title = "Electricity Consumption by Building ID",
+    x = "Building ID",
+    y = "Electricity Consumption"
+  ) +
+  theme_minimal()
+
+
+
+# Subset the data to include only the independent variables from the model
+independent_vars <- final_merged_data %>%
+  select(
+    building_id, 
+    in.geometry_floor_area,
+    in.geometry_stories,
+    in.vintage,
+    in.geometry_garage,
+    in.ceiling_fan,
+    in.insulation_slab,
+    in.ducts,
+    in.roof_material,
+    in.tenure
+  )
+
+# Glimpse of the independent variables
+glimpse(independent_vars)
+
+library(ggplot2)
+
+# Create a scatter plot to visualize electricity consumption vs. floor area
+ggplot(final_merged_data, aes(x = in.geometry_floor_area, y = electricity)) +
+  geom_point() +  # Scatter plot
+  labs(
+    title = "Electricity Consumption vs. Floor Area",
+    x = "Floor Area (sqft)",
+    y = "Electricity Consumption"
+  ) +
+  theme_minimal()  # Optional: applies a minimal theme
+
+
+ggplot(final_merged_data, aes(x = electricity)) +
+  geom_density(fill = "skyblue", alpha = 0.5) +
+  labs(title = "Density Plot of Electricity Consumption", x = "Electricity Consumption") +
+  theme_minimal()
+
+
+
+
+
+
+```
+
+# Research question 1: Model - XGBoost Model
+```{r}
+library(data.table)
+library(xgboost)
+
+# Ensure the dataset is a data.table
+final_merged_data <- as.data.table(final_merged_data)
+
+# Prepare data
+x <- as.matrix(final_merged_data[, .(
+  building_id, in.geometry_floor_area, in.geometry_stories, in.vintage,
+  in.geometry_garage, in.ceiling_fan, in.insulation_slab, in.ducts,
+  in.roof_material, in.tenure
+)])
+y <- final_merged_data$electricity
+
+# Convert to DMatrix
+ddata <- xgb.DMatrix(data = x, label = y)
+
+# Train XGBoost model
+xgb_model_r1 <- xgboost(
+  data = ddata, max_depth = 6, eta = 0.1, nrounds = 100,
+  objective = "reg:squarederror"
+)
+
+# Display model
+print(xgb_model_r1)
+```
+
+#Predict 
+
+```{r}
+linear_preds_r1 <- predict(linear_model_r1, newdata = test_data)
+linear_results_r1 <- evaluate_model(test_data$electricity, linear_preds_r1)
+linear_results_r1
+```
+
+
+# Research question 2: Models - Linear regression
+
+```{r}
+# Linear Regression
+linear_model_behavioural <- lm(
+  electricity ~ in.cooling_setpoint + in.heating_setpoint + in.occupants +
+    in.lighting + in.misc_extra_refrigerator + in.misc_pool_pump +
+    in.misc_gas_fireplace + in.range_spot_vent_hour +
+    in.hot_water_fixtures + in.vacancy_status,
+  data = final_merged_data
+)
+
+# Display model summary
+summary(linear_model_behavioural)
+
+
+
+
+
+# plots
+
+
+# Scatter plots for electricity vs. independent variables
+ggplot(final_merged_data, aes(x = in.cooling_setpoint, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Electricity vs. Cooling Setpoint", x = "Cooling Setpoint", y = "Electricity Consumption")
+
+
+library(ggplot2)
+library(patchwork)
+
+# Plot 1: Electricity vs. Cooling Setpoint
+plot1 <- ggplot(final_merged_data, aes(x = in.cooling_setpoint, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Electricity vs. Cooling Setpoint", x = "Cooling Setpoint", y = "Electricity Consumption")
+
+# Plot 2: Electricity vs. Heating Setpoint
+plot2 <- ggplot(final_merged_data, aes(x = in.heating_setpoint, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Electricity vs. Heating Setpoint", x = "Heating Setpoint", y = "Electricity Consumption")
+
+# Plot 3: Electricity vs. Number of Occupants
+plot3 <- ggplot(final_merged_data, aes(x = in.occupants, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Electricity vs. Number of Occupants", x = "Number of Occupants", y = "Electricity Consumption")
+
+# Combine the three plots into one plot using patchwork
+combined_plot <- plot1 + plot2 + plot3 + 
+  plot_layout(ncol = 3)  # arrange them in 1 row and 3 columns
+
+# Display the combined plot
+print(combined_plot)
+
+
+```
+
+
+```{r}
+
+# remove the insignificant value : in.misc_gas_fireplace
+
+# Linear Regression
+linear_model_behavioural <- lm(
+  electricity ~ in.cooling_setpoint + in.heating_setpoint + in.occupants +
+    in.lighting + in.misc_extra_refrigerator + in.misc_pool_pump + in.range_spot_vent_hour +
+    in.hot_water_fixtures + in.vacancy_status,
+  data = final_merged_data
+)
+
+# Display model summary
+summary(linear_model_behavioural)
+```
+
+# Research question 2: Model - XGBoost Model
+
+```{r}
+library(xgboost)
+
+# Prepare data
+x <- as.matrix(final_merged_data[, .(
+  in.cooling_setpoint, in.heating_setpoint, in.occupants,
+  in.lighting, in.misc_extra_refrigerator, in.misc_pool_pump,
+  in.misc_gas_fireplace, in.range_spot_vent_hour,
+  in.hot_water_fixtures, in.vacancy_status
+)])
+y <- final_merged_data$electricity
+
+# Convert to DMatrix
+ddata <- xgb.DMatrix(data = x, label = y)
+
+# Train XGBoost model
+xgb_model_behavioural <- xgboost(
+  data = ddata, max_depth = 6, eta = 0.1, nrounds = 100,
+  objective = "reg:squarederror"
+)
+
+# Display model
+print(xgb_model_behavioural)
+summary(xgb_model_behavioural)
+```
+
+# Predict
+
+```{r}
+linear_preds_behavioural <- predict(linear_model_behavioural, newdata = test_data)
+linear_results_behavioural <- evaluate_model(test_data$electricity, linear_preds_behavioural)
+linear_results_behavioural
+```
+
+
+# Research question 3: All Models - Linear regression and XGBoost
+
+```{r}
+library(caret)
+library(xgboost)
+library(BayesFactor)
+
+
+formula_r3 <- electricity ~ dry_bulb_temperature + relative_humidity + wind_speed + wind_direction 
+
+linear_model_r3 <- lm(formula_r3, data = train_data)
+
+xgboost_model_r3 <- xgboost(data = as.matrix(train_data[, c("dry_bulb_temperature", "relative_humidity", 
+                                                        "wind_speed", "wind_direction")]), 
+                         label = train_data$electricity, nrounds = 100, objective = "reg:squarederror")
+
+
+pred_linear_r3 <- predict(linear_model_r3, newdata = test_data)
+rmse_linear_r3 <- sqrt(mean((pred_linear_r3 - test_data$electricity)^2))
+r3_linear <- cor(pred_linear_r3, test_data$electricity)^2
+
+pred_xgboost_r3 <- predict(xgboost_model_r3, as.matrix(test_data[, c("dry_bulb_temperature", "relative_humidity", 
+                                                             "wind_speed", "wind_direction")]))
+rmse_xgboost_r3 <- sqrt(mean((pred_xgboost_r3 - test_data$electricity)^2))
+r2_xgboost_r3 <- cor(pred_xgboost_r3, test_data$electricity)^2
+
+
+results_r3models <- data.frame(
+  Model = c("Linear Model", "XGBoost"),
+  RMSE = c(rmse_linear_r3, rmse_xgboost_r3),
+  R2 = c(r3_linear, r2_xgboost_r3)
+)
+
+results_r3models
+
+
+library(ggplot2)
+
+# Plot for dry_bulb_temperature vs electricity
+plot_dry_bulb <- ggplot(final_merged_data, aes(x = dry_bulb_temperature, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Dry Bulb Temperature vs Electricity", x = "Dry Bulb Temperature", y = "Electricity")
+
+
+plot_dry_bul
+
+# Plot for relative_humidity vs electricity
+plot_relative_humidity <- ggplot(final_merged_data, aes(x = relative_humidity, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Relative Humidity vs Electricity", x = "Relative Humidity", y = "Electricity")
+
+plot_relative_humidity
+
+
+
+# Combine the plots using patchwork
+library(patchwork)
+combined_plot <- (plot_dry_bulb | plot_relative_humidity)
+combined_plot
+
+
+```
+
+
+
+# Research question 4: All Models - Linear Regression and XGBoost
+
+```{r}
+# Linear regression model with selected variables for energy efficient variables 
+
+linear_model_energy_efficient <- lm(electricity ~ 
+                     out.electricity.cooling.energy_consumption +
+                     out.electricity.heating.energy_consumption +
+                     out.electricity.lighting_interior.energy_consumption +
+                     out.electricity.refrigerator.energy_consumption +
+                     out.electricity.clothes_dryer.energy_consumption +
+                     out.electricity.clothes_washer.energy_consumption +
+                     out.electricity.plug_loads.energy_consumption +
+                     dry_bulb_temperature + 
+                     in.hvac_cooling_efficiency +
+                     in.hvac_heating_efficiency +
+                     out.electricity.hot_water.energy_consumption +
+                     out.electricity.pool_pump.energy_consumption +
+                     out.electricity.ceiling_fan.energy_consumption +
+                     in.insulation_ceiling +
+                     in.insulation_wall +
+                     relative_humidity +
+                     in.sqft +
+                     in.occupants,
+                   data = final_merged_data)
+
+
+
+# Summary of the model
+summary(linear_model_energy_efficient )
+
+# Predict on test data
+predictions <- predict(linear_model_energy_efficient, newdata = test_data)
+
+# Evaluate the model's performance (R-Squared and RMSE)
+actuals <- test_data$electricity
+rmse <- sqrt(mean((predictions - actuals)^2))  # Root Mean Squared Error
+r_squared <- cor(predictions, actuals)^2  # R-Squared
+
+# Print the performance metrics
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("R-Squared:", r_squared, "\n")
+
+# test the model
+test_model <- predict(linear_model_energy_efficient, newdata = test_data)
+head(test_model)
+
+```
+
+
+```{r}
+
+# GLIMPSE 
+
+# Create a subset with the variables used in the model
+model_data <- final_merged_data[, c(
+  "out.electricity.cooling.energy_consumption",
+  "out.electricity.heating.energy_consumption",
+  "out.electricity.lighting_interior.energy_consumption",
+  "out.electricity.refrigerator.energy_consumption",
+  "out.electricity.clothes_dryer.energy_consumption",
+  "out.electricity.clothes_washer.energy_consumption",
+  "out.electricity.plug_loads.energy_consumption",
+  "dry_bulb_temperature",
+  "in.hvac_cooling_efficiency",
+  "in.hvac_heating_efficiency",
+  "out.electricity.hot_water.energy_consumption",
+  "out.electricity.pool_pump.energy_consumption",
+  "out.electricity.ceiling_fan.energy_consumption",
+  "in.insulation_ceiling",
+  "in.insulation_wall",
+  "relative_humidity",
+  "in.sqft",
+  "in.occupants"
+)]
+
+# View the structure of the subset
+glimpse(model_data)
+
+# PLOTS 
+
+library(ggplot2)
+library(patchwork)
+
+# Plot for out.electricity.cooling.energy_consumption vs electricity
+plot_cooling <- ggplot(final_merged_data, aes(x = out.electricity.cooling.energy_consumption, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Cooling Energy Consumption vs Electricity", x = "Cooling Energy Consumption", y = "Electricity")
+
+plot_cooling
+
+# Plot for out.electricity.heating.energy_consumption vs electricity
+plot_heating <- ggplot(final_merged_data, aes(x = out.electricity.heating.energy_consumption, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Heating Energy Consumption vs Electricity", x = "Heating Energy Consumption", y = "Electricity")
+plot_heating
+
+# Plot for out.electricity.lighting_interior.energy_consumption vs electricity
+plot_lighting <- ggplot(final_merged_data, aes(x = out.electricity.lighting_interior.energy_consumption, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Lighting Energy Consumption vs Electricity", x = "Lighting Energy Consumption", y = "Electricity")
+
+plot_lighting
+
+# Plot for out.electricity.refrigerator.energy_consumption vs electricity
+plot_refrigerator <- ggplot(final_merged_data, aes(x = out.electricity.refrigerator.energy_consumption, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Refrigerator Energy Consumption vs Electricity", x = "Refrigerator Energy Consumption", y = "Electricity")
+
+# Plot for dry_bulb_temperature vs electricity
+plot_dry_bulb <- ggplot(final_merged_data, aes(x = dry_bulb_temperature, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Dry Bulb Temperature vs Electricity", x = "Dry Bulb Temperature", y = "Electricity")
+
+# Plot for in.hvac_cooling_efficiency vs electricity
+plot_hvac_cooling <- ggplot(final_merged_data, aes(x = in.hvac_cooling_efficiency, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "HVAC Cooling Efficiency vs Electricity", x = "HVAC Cooling Efficiency", y = "Electricity")
+plot_hvac_cooling
+
+# Plot for relative_humidity vs electricity
+plot_humidity <- ggplot(final_merged_data, aes(x = relative_humidity, y = electricity)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title = "Relative Humidity vs Electricity", x = "Relative Humidity", y = "Electricity")
+
+# Combine the plots into one using patchwork (adjust the layout as needed)
+combined_plots <- (plot_cooling | plot_heating | plot_lighting) /
+                  (plot_refrigerator | plot_dry_bulb | plot_hvac_cooling) /
+                  (plot_humidity)
+
+# Display the combined plots
+combined_plots
+
+
+```
+
+
+# Final model: Combination of all important variables.
+```{r}
+library(BayesFactor)
+library(xgboost)
+library(stats)
+
+
+
+# Combine all 40 variables into the formula
+formula <- as.formula(
+  "electricity ~ building_id + in.geometry_floor_area + in.geometry_stories +
+  in.vintage + in.geometry_garage + in.ceiling_fan + in.insulation_slab +
+  in.ducts + in.roof_material + in.tenure +
+  dry_bulb_temperature + relative_humidity + wind_speed +
+  wind_direction + global_horizontal_radiation + direct_normal_radiation +
+  diffuse_horizontal_radiation + in.weather_file_latitude +
+  in.weather_file_longitude + in.weather_file_city +
+  in.insulation_ceiling + in.insulation_floor + in.insulation_wall +
+  in.windows + in.water_heater_efficiency + in.heating_setpoint_offset_magnitude +
+  in.cooling_setpoint_offset_magnitude + in.insulation_foundation_wall +
+  in.hvac_heating_efficiency + in.hvac_cooling_efficiency +
+  in.cooling_setpoint + in.heating_setpoint + in.occupants + in.lighting +
+  in.misc_extra_refrigerator + in.misc_pool_pump + in.misc_gas_fireplace +
+  in.range_spot_vent_hour + in.hot_water_fixtures + in.vacancy_status"
+)
+
+# Prepare the dataset
+# Ensure only required variables are included
+data <- final_merged_data[, all.vars(formula), with = FALSE]
+data <- na.omit(data)  # Remove missing values
+
+# XGBoost Model
+x <- as.matrix(data[, -c("electricity"), with = FALSE])
+y <- data$electricity
+ddata <- xgb.DMatrix(data = x, label = y)
+
+xgb_model <- xgboost(
+  data = ddata,
+  max_depth = 6,
+  eta = 0.1,
+  nrounds = 5,
+  objective = "reg:squarederror"
+)
+
+cat("XGBoost Model Summary:\n")
+print(xgb_model)
+
+# Linear Regression Model
+linear_model <- lm(formula, data = final_merged_data)
+
+cat("\nLinear Regression Model Summary:\n")
+summary(linear_model)
+
+
+# plots 
+
+# Load necessary libraries
+library(ggplot2)
+
+# Plotting the relationship between in.geometry_floor_area and electricity
+plot_floor_area <- ggplot(final_merged_data, aes(x = in.geometry_floor_area, y = electricity)) +
+  geom_point(color = "blue") +  # scatter plot
+  geom_smooth(method = "lm", color = "red") +  # regression line
+  theme_minimal() +
+  labs(title = "Floor Area vs Electricity Consumption",
+       x = "Floor Area (in square meters)", y = "Electricity Consumption")
+
+# Display the plot
+print(plot_floor_area)
+
+
+# Load necessary libraries
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Plotting for Insulation Ceiling
+plot_ceiling <- ggplot(final_merged_data, aes(x = as.factor(in.insulation_ceiling), y = electricity, fill = as.factor(in.insulation_ceiling))) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Mean Electricity Consumption by Insulation Ceiling", 
+       x = "Insulation Ceiling", y = "Mean Electricity Consumption") +
+  scale_fill_brewer(palette = "Set3")
+
+# Plotting for Insulation Floor
+plot_floor <- ggplot(final_merged_data, aes(x = as.factor(in.insulation_floor), y = electricity, fill = as.factor(in.insulation_floor))) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Mean Electricity Consumption by Insulation Floor", 
+       x = "Insulation Floor", y = "Mean Electricity Consumption") +
+  scale_fill_brewer(palette = "Set3")
+
+# Plotting for Insulation Wall
+plot_wall <- ggplot(final_merged_data, aes(x = as.factor(in.insulation_wall), y = electricity, fill = as.factor(in.insulation_wall))) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Mean Electricity Consumption by Insulation Wall", 
+       x = "Insulation Wall", y = "Mean Electricity Consumption") +
+  scale_fill_brewer(palette = "Set3")
+
+# Display the plots
+print(plot_ceiling)
+print(plot_floor)
+print(plot_wall)
+
+
+```
+
+
+```{r}
+
+
+# PRECOMPUTED FILES 
+
+
+
+# Save necessary results for Shiny app
+save_results_for_shiny <- function() {
+  # Load required libraries
+  library(xgboost)
+  library(data.table)
+
+  # Define necessary objects to save
+  results <- list(
+    # Research Question 1: Building Attributes
+    linear_model_r1_summary = summary(linear_model_r1),
+    xgb_model_r1 = xgb_model_r1,
+    
+    # Predictions and evaluations
+    linear_preds_r1 = linear_preds_r1,
+    linear_results_r1 = linear_results_r1,
+
+    # Research Question 2: Behavioral Patterns
+    linear_model_behavioural_summary = summary(linear_model_behavioural),
+    xgb_model_behavioural = xgb_model_behavioural,
+    linear_preds_behavioural = linear_preds_behavioural,
+    linear_results_behavioural = linear_results_behavioural,
+
+    # Research Question 3: Weather Attributes
+    linear_model_r3_summary = summary(linear_model_r3),
+    xgb_model_r3 = xgboost_model_r3,
+    results_r3models = results_r3models,
+
+    # Research Question 4: Energy Efficiency
+    linear_model_energy_efficient_summary = summary(linear_model_energy_efficient),
+    predictions_energy_efficient = predictions,
+    r_squared_energy_efficient = r_squared,
+    rmse_energy_efficient = rmse,
+
+    # Final Model
+    final_model_linear_summary = summary(linear_model),
+    final_model_xgb = xgb_model,
+
+    # Precomputed data for final model's correlation matrix (optional)
+    correlation_matrix_final_model = cor(data, use = "complete.obs"),
+
+    # Precomputed datasets (if needed in the app)
+    test_data = test_data,
+    train_data = train_data
+  )
+
+  # Save all results into an RData file
+  save(results, file = "precomputed_results.RData")
+
+  cat("Results saved successfully to precomputed_results.RData\n")
+}
+
+# Run the function
+save_results_for_shiny()
+
+```
+
+
+
+```{r}
+linear_preds <- predict(linear_model, newdata = test_data)
+
+# Evaluate Linear Regression
+evaluate_model <- function(actual, predicted) {
+  mse <- mean((actual - predicted)^2)
+  mae <- mean(abs(actual - predicted))
+  r2 <- 1 - (sum((actual - predicted)^2) / sum((actual - mean(actual))^2))
+  return(list(MSE = mse, MAE = mae, R2 = r2))
+}
+
+linear_results <- evaluate_model(test_data$electricity, linear_preds)
+linear_results
+```
+
+
+# Creating new dataset with warmer temperature 
+```{r}
+
+colnames(final_merged_data)
+
+
+warmjuly_weatherdata <- final_merged_data %>% 
+mutate(dry_bulb_temperature = dry_bulb_temperature + 5)
+head(warmjuly_weatherdata)
+```
+
+# merging warm july with house
+
+```{r}
+merged_warmdata <- merge(static_house_data, warmjuly_weatherdata, by.x = "in.county",
+                     by.y = "county_code", all = FALSE)  
+```
+
+# merging all together to create a whole warm dataset for july
+
+```{r}
+new_data$combined_key <- paste(new_data$building_id, new_data$time, sep = "_")
+merged_warmdata$combined_key <- paste(merged_warmdata$bldg_id, merged_warmdata$date_time, sep = "_")
+
+final_merged_data2 <- merge(new_data, merged_warmdata, 
+                           by = "combined_key",
+                           all = FALSE)
+```
+
+# Arrange the new dataset
+```{r}
+julywarm_merged_data <- final_merged_data2 %>%
+  arrange(combined_key)
+```
+
+# Creating appropriate data attributes for the columns 
+```{r}
+library(data.table)
+
+julywarm_merged_data <- as.data.table(julywarm_merged_data)
+
+categorical_cols <- names(julywarm_merged_data)[sapply(julywarm_merged_data, is.factor) | sapply(julywarm_merged_data, is.character)]
+julywarm_merged_data[, (categorical_cols) := lapply(.SD, function(x) as.numeric(as.factor(x))), .SDcols = categorical_cols]
+
+str(julywarm_merged_data)
+
+```
+
+
+
+# Predicting Peak energy usage and Analysis 
+```{r}
+#predicting the energy usage for the warmer July dataset and future demand of energy using linear model and storing it in the new column called  predicted_energy
+
+warmer_july_predictions <- predict(linear_model, newdata = julywarm_merged_data)
+julywarm_merged_data$predicted_energy <- warmer_july_predictions
+head(julywarm_merged_data)
+
+peak_demand <- max(julywarm_merged_data$predicted_energy)
+peak_demand
+
+#i want to take a look at the customers who might have a peak in demand when it gets warmer
+peak_demand_cust <- julywarm_merged_data[julywarm_merged_data$predicted_energy == peak_demand, ]
+profitable_customers <- unique(peak_demand_cust$building_id)
+profitable_customers
+```
+
+
+
+```{r}
+any(is.na(julywarm_merged_data))
+sum(is.na(julywarm_merged_data))
+
+julywarm_merged_data <- na.omit(julywarm_merged_data)  
+
+```
+
+```{r}
+# Extract data used in the model
+model_data <- model.frame(linear_model_behavioural)
+
+# Create data frame for fitted vs actual
+plot_data <- data.frame(
+  Fitted = fitted(linear_model_behavioural),
+  Actual = model_data$electricity
+)
+
+# Plot Fitted vs Actual
+ggplot(plot_data, aes(x = Fitted, y = Actual)) +
+  geom_point(color = "blue", alpha = 0.5) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(
+    title = "Fitted vs. Actual Electricity Consumption",
+    x = "Fitted Values (Predicted Electricity)",
+    y = "Actual Electricity Consumption"
+  ) +
+  theme_minimal()
+
+# Create data frame for residual plot
+residual_data <- data.frame(
+  Fitted = fitted(linear_model_behavioural),
+  Residuals = resid(linear_model_behavioural)
+)
+
+# Plot Residuals vs Fitted
+ggplot(residual_data, aes(x = Fitted, y = Residuals)) +
+  geom_point(color = "purple", alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "Residuals vs. Fitted Values",
+    x = "Fitted Values (Predicted Electricity)",
+    y = "Residuals (Prediction Error)"
+  ) +
+  theme_minimal()
+```
+

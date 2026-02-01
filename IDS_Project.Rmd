@@ -1,0 +1,404 @@
+---
+title: "IDS_Project"
+author: "Hari Ram Selvaraj"
+date: "2024-11-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#lOAD THE LIBRARIES 
+
+library(arrow)
+library(tidyverse)
+library(data.table)
+
+
+# FILE NAMES
+
+#1000 HOUSE ID per File
+# Combined_energy_data_set_1_and_2.parquet
+# Combined_energy_data_set_3_and_4.parquet
+# Combined_energy_data_set_5_and_6.parquet
+# Combined_energy_data_set_7_and_8.parquet
+# Combined_energy_data_set_9_and_10.parquet
+
+
+# 2000 HOUSE ID per File
+# Combined_energy_data_set_1_and_4.parquet
+# Combined_energy_data_set_5_and_8.parquet
+
+
+# 4000 HOUSE ID per file 
+# /Users/saranya/combined_data_1_to_8.parquet
+
+# 5000 HOUSE ID per file 
+
+
+```
+
+
+```{r}
+
+###################################_____-------------DO NOT RUN THIS-------------_____######################################
+# STATIC HOUSE DATASET 
+
+# Static data set
+static_data <- read_parquet("https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/static_house_info.parquet")
+
+glimpse(static_data)
+meta_data <- read_csv("https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/data_dictionary.csv")
+
+weather_data <- read_csv("https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/weather/2023-weather-data/G4500010.csv")
+
+
+colnames(weather_data)
+colnames(meta_data)
+# glimpse(static_data)
+
+# colnames(static_data)
+# 
+# 
+# # Extract the first 1000 building IDs
+# bld_set_1 <- static_data$bldg_id[1:499]
+# bld_set_2 <- static_data$bldg_id[500:999]
+# 
+# # Extract the 1000 - 2000 building IDs
+# bld_set_3 <- static_data$bldg_id[1000:1499]
+# bld_set_4 <- static_data$bldg_id[1500:1999]
+# 
+# # Extract the 2000 - 3000 building IDs
+# bld_set_5 <- static_data$bldg_id[2000:2499]
+# bld_set_6 <- static_data$bldg_id[2500:2999]
+# 
+# # Extract the 3000 - 4000 building IDs
+# bld_set_7 <- static_data$bldg_id[3000:3499]
+# bld_set_8 <- static_data$bldg_id[3500:3999]
+# 
+# # Extract the 4000 - 5000 building IDs
+# bld_set_9 <- static_data$bldg_id[4000:4499]
+# bld_set_10 <- static_data$bldg_id[4500:5000]
+
+# # Function to download parquet data for each building ID
+# download_data <- function(bld_id) {
+#   url <- paste0("https://intro-datascience.s3.us-east-2.amazonaws.com/SC-data/2023-houseData/", bld_id, ".parquet")
+#   tryCatch({
+#     data <- read_parquet(url)
+#     data$building_id <- bld_id
+#     return(data)
+#   }, error = function(e) {
+#     message("Error loading data for Building ID: ", bld_id, " - ", e$message)
+#     return(NULL)
+#   })
+# }
+# 
+# 
+# # List of building ID variables
+# building_groups <- list(
+#   bld_set_9, bld_set_10
+# )
+# 
+# # Initialize an empty list to store combined data for all groups
+# all_combined_data <- list()
+# 
+# # Loop through each group, download data, and combine
+# for (group in building_groups) {
+#   group_data <- lapply(group, download_data) # Download data for each building ID in the group
+#   all_combined_data <- c(all_combined_data, group_data) # Add to the main list
+# }
+# 
+# 
+# # Combine all data frames into one
+# final_combined_data <- do.call(rbind, all_combined_data)
+# 
+# # Save the combined data as a Parquet file
+# write_parquet(final_combined_data, "/Users/saranya/Combined_energy_data_set_9_and_10.parquet")
+# 
+# message("Data successfully downloaded and saved.")
+# file_path <- "/Users/saranya/Combined_energy_data_set_9_and_10.parquet"
+# dataset <- read_parquet(file_path)
+# 
+# glimpse(all_combined_data)
+# 
+# colnames(dataset)
+
+```
+
+
+
+```{r}
+# Define the list of local Parquet file paths
+
+energy_data_4000_path <- "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/combined_data_1_to_8.parquet"
+energy_data_1000_path <- "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/Combined_energy_data_set_9_and_10.parquet"
+```
+
+
+```{r}
+
+# READ THE PARQUET FILES AND STORE IN VARIABLES 
+
+energy_data_4000 <- read_parquet(energy_data_4000_path)
+energy_data_1000 <- read_parquet(energy_data_1000_path)
+
+
+# Combine the two datasets
+combined_data <- bind_rows(energy_data_4000, energy_data_1000)
+
+# WRITE THE COMBINED DATA TO A SINGLE PARQUET FILE 
+write_parquet(combined_data, "5000_House_ID.parquet")
+
+```
+
+
+```{r}
+
+# CHECK FOR LOW VARIANCE OR 0 VARIANCE 
+
+variances_4000 <- sapply(energy_data_4000, var, na.rm = TRUE)
+variances_1000 <- sapply(energy_data_1000, var, na.rm = TRUE)
+
+# Display the variances
+variances_4000
+variances_1000 
+
+
+```
+
+
+```{r}
+library(dplyr)
+
+
+
+# Drop all the variables where it indicates low variance 
+# [low variance are not good for predictive models since the variables have similar values thorughout the whole data set ]
+
+# 4000 values 
+# 1000 values 
+
+# Calculate the total number of columns before low variance columns are removed
+before_variance_4000 <- length(colnames(energy_data_4000))
+before_variance_1000 <- length(colnames(energy_data_1000))
+
+print("Number of columns before removing 0 variance variables",str(before_variance_4000))
+print("Number of columns before removing 0 variance variables",str(before_variance_1000))
+
+
+energy_data_4000 <- energy_data_4000 %>% select(-out.fuel_oil.heating_hp_bkup.energy_consumption,
+                                                 -out.fuel_oil.heating.energy_consumption,
+                                                 -out.fuel_oil.hot_water.energy_consumption,
+                                                 -out.natural_gas.clothes_dryer.energy_consumption,
+                                                 -out.natural_gas.heating_hp_bkup.energy_consumption,
+                                                 -out.natural_gas.heating.energy_consumption,
+                                                 -out.natural_gas.hot_water.energy_consumption,
+                                                 -out.natural_gas.range_oven.energy_consumption,
+                                                 -out.propane.clothes_dryer.energy_consumption,
+                                                 -out.propane.heating_hp_bkup.energy_consumption,
+                                                 -out.propane.heating.energy_consumption,
+                                                -out.propane.hot_water.energy_consumption,
+                                                -out.propane.range_oven.energy_consumption)
+
+
+
+energy_data_1000 <- energy_data_1000 %>% select(-out.fuel_oil.heating_hp_bkup.energy_consumption,
+                                                 -out.fuel_oil.heating.energy_consumption,
+                                                 -out.fuel_oil.hot_water.energy_consumption,
+                                                 -out.natural_gas.clothes_dryer.energy_consumption,
+                                                 -out.natural_gas.heating_hp_bkup.energy_consumption,
+                                                 -out.natural_gas.heating.energy_consumption,
+                                                 -out.natural_gas.hot_water.energy_consumption,
+                                                 -out.natural_gas.range_oven.energy_consumption,
+                                                 -out.propane.clothes_dryer.energy_consumption,
+                                                 -out.propane.heating_hp_bkup.energy_consumption,
+                                                 -out.propane.heating.energy_consumption,
+                                                -out.propane.hot_water.energy_consumption,
+                                                -out.propane.range_oven.energy_consumption)
+
+
+after_variance_4000 <- length(colnames(energy_data_4000))
+after_variance_1000 <- length(colnames(energy_data_1000))
+
+print("Number of columns after removing the 0 variance variables",str(after_variance_4000))
+print("Number of columns after removing the 0 variance variables",str(after_variance_1000))
+
+
+```
+
+
+```{r}
+
+# COMBINE THE DATASET 
+
+library(arrow)
+library(dbplyr)
+library(tidyverse)
+library(data.table)
+
+
+# READ THE PARQUET FILES 
+energy_data_4000 <- read_parquet("/Users/saranya/combined_data_1_to_8.parquet")
+energy_data_1000 <- read_parquet("/Users/saranya/Combined_energy_data_set_9_and_10.parquet")
+
+
+file_1 <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/Combined_energy_data_set_1_and_2.parquet")
+file_2 <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/Combined_energy_data_set_3_and_4.parquet")
+file_3 <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/Combined_energy_data_set_5_and_6.parquet")
+file_4 <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/Combined_energy_data_set_7_and_8.parquet")
+file_5 <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/Combined_energy_data_set_9_and_10.parquet")
+
+
+
+# Combine the two datasets
+combined_data <- bind_rows(energy_data_4000, energy_data_1000)
+
+# WRITE THE COMBINED DATA TO A SINGLE PARQUET FILE 
+write_parquet(combined_data, "5000_House_ID.parquet")
+
+
+energy_data<- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet")
+dim(energy_data)
+glimpse(energy_data)
+
+energy_data <- energy_data %>%
+  select(starts_with("out.electricity"),building_id, time)
+
+write_parquet(energy_data, "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/5000_House_ID.parquet")
+
+head(energy_data,5)
+
+print("Energy data")
+
+
+head(weather_data)
+
+
+
+```
+
+
+```{r}
+
+# HANDLE MISSING VALUES 
+# TECHNIQUES TO HANDLE THE MISSING VALUES 
+# 1.SPLINE IMPUTATION 
+# 2.LINEAR INTERPOLATION 
+# 3.DELETION 
+
+# Since we are having the weather data, linear imputation would be the best technique to handle the missing values 
+
+
+# Check for the columns those has NA/Missing values 
+
+
+is.na(energy_data)
+```
+
+
+```{r}
+# Handling NA values 
+# Aggregating the electricity values 
+# drop the months other than July 
+# feature extraction for electricity rates 
+# finding the independent features 
+# Merge it with the other datasets 
+# EDA 
+# Research question for the data set ; 
+# Algorithm selection
+# Model building 
+# Evaluation 
+# accuracy , test , predict etc etc
+```
+
+
+```{r}
+
+# CODE TO GET THE DATA for JULY. 
+# THIS CONTAINS THE JULY MONTH DATA SOURCING AND STORING IN A SEPARATE FILE 
+library(arrow)
+library(dbplyr)
+library(dplyr)
+library(tidyverse)
+library(data.table)
+
+
+combined_data <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/COMBINED_ENERGY_DATASET_5000_House_IDS.parquet")
+
+
+head(combined_data)
+
+
+
+# removed the propane and the fuel oil since there is no consumption of it in any house
+electricity_data <-  %>%
+  select(starts_with("out.electricity"),building_id, time)
+
+colnames(electricity_data)
+
+dim(electricity_data)
+data <- electricity_data %>%
+  mutate(
+    electricity = rowSums(select(., starts_with("out.electricity.")), na.rm = TRUE)
+  )
+
+head(data$building_id)
+
+# Filter rows where the 'time' variable is in July (07)
+data <- data %>%
+  filter(format(as.Date(time), "%m") == "07")
+
+length(data$time)
+
+head(data$time)
+
+#write_parquet(data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_1")
+#write_parquet(data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_2")
+#write_parquet(data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_3")
+#write_parquet(data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_4")
+#write_parquet(data,"/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_5")
+
+
+first <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_1")
+second <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_2")
+third <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_3")
+fourth <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_4")
+fifth <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_energy_data_5")
+
+
+# Merging the data-sets into one
+merged_data <- bind_rows(first, second, third, fourth, fifth)
+
+# Writing the merged data-set to a new parquet file
+write_parquet(merged_data, "/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July_cleaned_data_merged.parquet")
+
+final <- read_parquet("/Users/saranya/Desktop/Classroom/Introduction to Data Science /IDS Project/Cleaned_Dataset/July cleaned data/July_cleaned_data_merged.parquet")
+
+
+dim(final)
+```
+
+
+# Handling NA values
+# Spline imputation (for smooth transition of missing values)
+# Linear interpolation ( )
+
+# Aggregating the electricity values 
+# drop the months other than July 
+# feature extraction for electricity rates 
+# finding the independent features 
+# EDA
+# Research question for the data set ; 
+# Algorithm selection
+# Model building 
+# Evaluation 
+# accuracy , test , predict etc etc
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
